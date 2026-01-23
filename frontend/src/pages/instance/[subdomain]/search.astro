@@ -1,0 +1,77 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/layout/Header.astro';
+import Footer from '@components/layout/Footer.astro';
+import VideoCard from '@components/video/VideoCard.astro';
+import VideoGrid from '@components/video/VideoGrid.astro';
+import Input from '@components/common/Input.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { subdomain: 'stream' } },
+    { params: { subdomain: 'video' } },
+    { params: { subdomain: 'watch' } },
+  ];
+}
+
+const { subdomain } = Astro.params;
+const { q } = Astro.url.searchParams;
+---
+
+<BaseLayout title={`Search: ${q || 'Search Videos'} - Video Site`}>
+  <Header />
+  <main class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Search Videos</h1>
+        <p class="text-gray-600 mt-2">Find exactly what you're looking for</p>
+      </div>
+
+      <form action={`/instance/${subdomain}/search`} method="GET" class="mb-8">
+        <div class="flex gap-4 max-w-2xl">
+          <Input 
+            name="q" 
+            value={q} 
+            placeholder="Search for videos..." 
+            class="flex-1"
+          />
+          <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            Search
+          </button>
+        </div>
+      </form>
+
+      {q ? (
+        <div>
+          <p class="text-gray-600 mb-6">Showing results for "{q}"</p>
+          
+          <VideoGrid>
+            <VideoCard 
+              title="Getting Started with Video Streaming"
+              thumbnail="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=640&h=360&fit=crop"
+              views="12.5K"
+              duration="12:34"
+              href={`/instance/${subdomain}/watch/video-1`}
+            />
+            <VideoCard 
+              title="Advanced Video Editing Techniques"
+              thumbnail="https://images.unsplash.com/photo-1574717432735-48876bc0d687?w=640&h=360&fit=crop"
+              views="8.2K"
+              duration="24:18"
+              href={`/instance/${subdomain}/watch/video-2`}
+            />
+          </VideoGrid>
+
+          <div class="mt-8 text-center">
+            <p class="text-gray-500">No more results to show</p>
+          </div>
+        </div>
+      ) : (
+        <div class="text-center py-12">
+          <p class="text-gray-500">Enter a search term to find videos</p>
+        </div>
+      )}
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>

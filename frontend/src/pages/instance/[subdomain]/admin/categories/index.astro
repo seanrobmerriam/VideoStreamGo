@@ -1,0 +1,119 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Button from '@components/common/Button.astro';
+import Modal from '@components/common/Modal.astro';
+import Input from '@components/common/Input.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { subdomain: 'stream' } },
+    { params: { subdomain: 'video' } },
+    { params: { subdomain: 'watch' } },
+  ];
+}
+
+const { subdomain } = Astro.params;
+---
+
+<BaseLayout title="Categories - Admin">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar activePath={`/instance/${subdomain}/admin/categories`} />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Categories</h1>
+        <Button variant="primary" onclick="document.getElementById('addModal').classList.remove('hidden')">
+          Add Category
+        </Button>
+      </div>
+
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Name</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Slug</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Videos</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Created</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm text-gray-900">Tutorials</td>
+              <td class="py-4 px-4 text-sm text-gray-600">tutorials</td>
+              <td class="py-4 px-4 text-sm text-gray-600">45</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="active" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Jan 15, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm text-gray-900">Entertainment</td>
+              <td class="py-4 px-4 text-sm text-gray-600">entertainment</td>
+              <td class="py-4 px-4 text-sm text-gray-600">128</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="active" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Jan 20, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm text-gray-900">Education</td>
+              <td class="py-4 px-4 text-sm text-gray-600">education</td>
+              <td class="py-4 px-4 text-sm text-gray-600">67</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="active" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Feb 1, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm text-gray-900">Live</td>
+              <td class="py-4 px-4 text-sm text-gray-600">live</td>
+              <td class="py-4 px-4 text-sm text-gray-600">3</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="inactive" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Feb 15, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <Modal id="addModal" title="Add Category">
+    <form class="space-y-4">
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <Input id="name" name="name" type="text" placeholder="Category name" required />
+      </div>
+      <div>
+        <label for="slug" class="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+        <Input id="slug" name="slug" type="text" placeholder="category-slug" required />
+      </div>
+      <div>
+        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea 
+          id="description" 
+          name="description" 
+          rows="3" 
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        ></textarea>
+      </div>
+      <div class="flex justify-end gap-4">
+        <Button variant="outline" onclick="document.getElementById('addModal').classList.add('hidden')">Cancel</Button>
+        <Button variant="primary">Add Category</Button>
+      </div>
+    </form>
+  </Modal>
+</BaseLayout>

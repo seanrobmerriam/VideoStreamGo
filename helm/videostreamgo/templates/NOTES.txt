@@ -1,0 +1,29 @@
+Thank you for installing VideoStreamGo!
+
+Your release is named {{ .Release.Name }}.
+
+To get started, you'll need to:
+
+1. Configure your secrets:
+   kubectl create secret generic {{ .Release.Name }}-secrets \
+     --from-literal=DB_PASSWORD=your-password \
+     --from-literal=JWT_SECRET=your-jwt-secret \
+     --namespace {{ .Release.Namespace }}
+
+2. If using external databases, update the values.yaml with your connection details.
+
+3. Access the application:
+   {{- if .Values.ingress.enabled }}
+   - API: https://api.videostreamgo.com
+   - Tenant instances: https://*.videostreamgo.com
+   {{- else }}
+   - Platform API: http://{{ include "videostreamgo.fullname" . }}-platform-api:{{ .Values.platform-api.service.port }}
+   - Instance API: http://{{ include "videostreamgo.fullname" . }}-instance-api:{{ .Values.instance-api.service.port }}
+   - Frontend: http://{{ include "videostreamgo.fullname" . }}-frontend:{{ .Values.frontend.service.port }}
+   {{- end }}
+
+4. Check the status:
+   kubectl get pods -n {{ .Release.Namespace }}
+   kubectl get svc -n {{ .Release.Namespace }}
+
+For more documentation, visit: https://docs.videostreamgo.com

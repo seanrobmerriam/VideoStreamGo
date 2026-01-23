@@ -1,0 +1,100 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+  class?: string;
+}
+
+const { currentPage, totalPages, baseUrl, class: className = '' } = Astro.props;
+
+const getPageUrl = (page: number) => {
+  if (page < 1 || page > totalPages) return '#';
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  return page === 1 ? baseUrl : `${baseUrl}${separator}page=${page}`;
+};
+
+const pages = [];
+const maxVisible = 5;
+let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+let end = Math.min(totalPages, start + maxVisible - 1);
+
+if (end - start + 1 < maxVisible) {
+  start = Math.max(1, end - maxVisible + 1);
+}
+
+for (let i = start; i <= end; i++) {
+  pages.push(i);
+}
+---
+
+<nav class={`flex items-center justify-center gap-2 ${className}`} aria-label="Pagination">
+  <a
+    href={getPageUrl(currentPage - 1)}
+    class:list={[
+      'inline-flex items-center justify-center rounded-lg border border-secondary-300 px-3 py-2 text-sm font-medium transition-colors',
+      currentPage === 1
+        ? 'border-secondary-200 text-secondary-400 cursor-not-allowed'
+        : 'border-secondary-300 bg-white text-secondary-700 hover:bg-secondary-50 dark:bg-secondary-800 dark:text-secondary-300 dark:border-secondary-600 dark:hover:bg-secondary-700'
+    ]}
+    aria-disabled={currentPage === 1}
+  >
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+    </svg>
+  </a>
+
+  {start > 1 && (
+    <>
+      <a
+        href={getPageUrl(1)}
+        class="inline-flex items-center justify-center rounded-lg border border-secondary-300 px-3 py-2 text-sm font-medium text-secondary-700 hover:bg-secondary-50 dark:bg-secondary-800 dark:text-secondary-300 dark:border-secondary-600 dark:hover:bg-secondary-700"
+      >
+        1
+      </a>
+      {start > 2 && <span class="px-2 text-secondary-500">...</span>}
+    </>
+  )}
+
+  {pages.map((page) => (
+    <a
+      href={getPageUrl(page)}
+      class:list={[
+        'inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+        page === currentPage
+          ? 'border-primary-500 bg-primary-500 text-white'
+          : 'border-secondary-300 bg-white text-secondary-700 hover:bg-secondary-50 dark:bg-secondary-800 dark:text-secondary-300 dark:border-secondary-600 dark:hover:bg-secondary-700'
+      ]}
+      aria-current={page === currentPage ? 'page' : undefined}
+    >
+      {page}
+    </a>
+  ))}
+
+  {end < totalPages && (
+    <>
+      {end < totalPages - 1 && <span class="px-2 text-secondary-500">...</span>}
+      <a
+        href={getPageUrl(totalPages)}
+        class="inline-flex items-center justify-center rounded-lg border border-secondary-300 px-3 py-2 text-sm font-medium text-secondary-700 hover:bg-secondary-50 dark:bg-secondary-800 dark:text-secondary-300 dark:border-secondary-600 dark:hover:bg-secondary-700"
+      >
+        {totalPages}
+      </a>
+    </>
+  )}
+
+  <a
+    href={getPageUrl(currentPage + 1)}
+    class:list={[
+      'inline-flex items-center justify-center rounded-lg border border-secondary-300 px-3 py-2 text-sm font-medium transition-colors',
+      currentPage === totalPages
+        ? 'border-secondary-200 text-secondary-400 cursor-not-allowed'
+        : 'border-secondary-300 bg-white text-secondary-700 hover:bg-secondary-50 dark:bg-secondary-800 dark:text-secondary-300 dark:border-secondary-600 dark:hover:bg-secondary-700'
+    ]}
+    aria-disabled={currentPage === totalPages}
+  >
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+    </svg>
+  </a>
+</nav>

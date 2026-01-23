@@ -1,0 +1,115 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import Button from '@components/common/Button.astro';
+import Badge from '@components/common/Badge.astro';
+---
+
+<BaseLayout title="Billing - VideoStreamGo">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <h1 class="text-2xl font-bold mb-8">Billing & Subscription</h1>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+          <h2 class="text-lg font-semibold mb-4">Current Plan</h2>
+          <div class="flex items-center justify-between p-4 bg-indigo-50 rounded-lg mb-4">
+            <div>
+              <p class="text-xl font-bold text-indigo-700">Pro Plan</p>
+              <p class="text-gray-600">$29/month</p>
+            </div>
+            <Badge variant="success">Active</Badge>
+          </div>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p class="text-gray-500">Next billing date</p>
+              <p class="font-medium">February 15, 2024</p>
+            </div>
+            <div>
+              <p class="text-gray-500">Payment method</p>
+              <p class="font-medium">•••• •••• •••• 4242</p>
+            </div>
+          </div>
+          <div class="mt-6 flex gap-4">
+            <Button variant="outline">Change Plan</Button>
+            <Button variant="outline">Update Payment</Button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Usage This Month</h2>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-sm text-gray-600">Storage</span>
+                <span class="text-sm font-medium">156 GB / 250 GB</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-indigo-600 h-2 rounded-full" style="width: 62%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-sm text-gray-600">Bandwidth</span>
+                <span class="text-sm font-medium">45 GB / 500 GB</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-green-600 h-2 rounded-full" style="width: 9%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-sm text-gray-600">Instances</span>
+                <span class="text-sm font-medium">3 / 5</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-yellow-600 h-2 rounded-full" style="width: 60%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Payment History</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-sm text-gray-500 border-b">
+                <th class="pb-3">Date</th>
+                <th class="pb-3">Description</th>
+                <th class="pb-3">Amount</th>
+                <th class="pb-3">Status</th>
+                <th class="pb-3">Invoice</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <tr class="border-b">
+                <td class="py-3">Jan 15, 2024</td>
+                <td class="py-3">Pro Plan - Monthly</td>
+                <td class="py-3">$29.00</td>
+                <td class="py-3"><Badge variant="success">Paid</Badge></td>
+                <td class="py-3"><a href="#" class="text-indigo-600 hover:text-indigo-900">Download</a></td>
+              </tr>
+              <tr class="border-b">
+                <td class="py-3">Dec 15, 2023</td>
+                <td class="py-3">Pro Plan - Monthly</td>
+                <td class="py-3">$29.00</td>
+                <td class="py-3"><Badge variant="success">Paid</Badge></td>
+                <td class="py-3"><a href="#" class="text-indigo-600 hover:text-indigo-900">Download</a></td>
+              </tr>
+              <tr>
+                <td class="py-3">Nov 15, 2023</td>
+                <td class="py-3">Pro Plan - Monthly</td>
+                <td class="py-3">$29.00</td>
+                <td class="py-3"><Badge variant="success">Paid</Badge></td>
+                <td class="py-3"><a href="#" class="text-indigo-600 hover:text-indigo-900">Download</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>

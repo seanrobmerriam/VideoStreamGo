@@ -1,0 +1,122 @@
+---
+# Platform API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+    app.kubernetes.io/component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: videostreamgo/platform-api:latest
+        envFrom:
+        - secretRef:
+            name: videostreamgo-secrets
+        - configMapRef:
+            name: videostreamgo-config
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelay: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelay: 5
+          periodSeconds: 10
+---
+# Platform API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+---
+# Instance API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: instance-api
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+    app.kubernetes.io/component: instance-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: instance-api
+  template:
+    metadata:
+      labels:
+        app: instance-api
+    spec:
+      containers:
+      - name: instance-api
+        image: videostreamgo/instance-api:latest
+        envFrom:
+        - secretRef:
+            name: videostreamgo-secrets
+        - configMapRef:
+            name: videostreamgo-config
+        ports:
+        - containerPort: 8081
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+# Instance API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: instance-api-service
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+spec:
+  selector:
+    app: instance-api
+  ports:
+  - port: 8081
+    targetPort: 8081
+    name: http
+  type: ClusterIP

@@ -1,0 +1,121 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/layout/Header.astro';
+import Footer from '@components/layout/Footer.astro';
+import VideoPlayer from '@components/video/VideoPlayer.tsx';
+import VideoCard from '@components/video/VideoCard.astro';
+import VideoGrid from '@components/video/VideoGrid.astro';
+import Avatar from '@components/common/Avatar.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { subdomain: 'stream', id: 'video-1' } },
+    { params: { subdomain: 'stream', id: 'video-2' } },
+    { params: { subdomain: 'stream', id: 'video-3' } },
+    { params: { subdomain: 'video', id: 'video-1' } },
+    { params: { subdomain: 'video', id: 'video-2' } },
+    { params: { subdomain: 'video', id: 'video-3' } },
+    { params: { subdomain: 'watch', id: 'video-1' } },
+    { params: { subdomain: 'watch', id: 'video-2' } },
+    { params: { subdomain: 'watch', id: 'video-3' } },
+  ];
+}
+
+const { subdomain, id } = Astro.params;
+---
+
+<BaseLayout title="Video Title - Video Site">
+  <Header />
+  <main class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+            <VideoPlayer client:only="react" videoId={id} />
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Getting Started with Video Streaming</h1>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <Avatar src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" alt="John Doe" />
+                <div>
+                  <p class="font-medium text-gray-900">John Doe</p>
+                  <p class="text-sm text-gray-500">1.2K subscribers</p>
+                </div>
+              </div>
+              <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                Subscribe
+              </button>
+            </div>
+            <p class="text-gray-600">
+              Learn the basics of video streaming in this comprehensive tutorial. 
+              We'll cover everything from equipment setup to live streaming best practices.
+            </p>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 class="text-lg font-semibold mb-4">Comments (24)</h2>
+            <div class="space-y-4">
+              <div class="flex gap-3">
+                <Avatar src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Jane Smith" />
+                <div>
+                  <p class="font-medium text-sm">Jane Smith</p>
+                  <p class="text-gray-600 text-sm">Great tutorial! Very helpful for beginners.</p>
+                  <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <Avatar src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" alt="Bob Wilson" />
+                <div>
+                  <p class="font-medium text-sm">Bob Wilson</p>
+                  <p class="text-gray-600 text-sm">Could you make a video about advanced streaming techniques?</p>
+                  <p class="text-xs text-gray-400 mt-1">5 hours ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Up Next</h2>
+          <div class="space-y-4">
+            <VideoCard 
+              title="Advanced Video Editing Techniques"
+              thumbnail="https://images.unsplash.com/photo-1574717432735-48876bc0d687?w=640&h=360&fit=crop"
+              views="8.2K"
+              duration="24:18"
+              href={`/instance/${subdomain}/watch/video-2`}
+              horizontal
+            />
+            <VideoCard 
+              title="Live Streaming Setup Guide"
+              thumbnail="https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=640&h=360&fit=crop"
+              views="15.7K"
+              duration="18:45"
+              href={`/instance/${subdomain}/watch/video-3`}
+              horizontal
+            />
+            <VideoCard 
+              title="Video Production Best Practices"
+              thumbnail="https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=640&h=360&fit=crop"
+              views="5.3K"
+              duration="15:22"
+              href={`/instance/${subdomain}/watch/video-4`}
+              horizontal
+            />
+            <VideoCard 
+              title="Audio Mixing for Video"
+              thumbnail="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=640&h=360&fit=crop"
+              views="3.1K"
+              duration="20:10"
+              href={`/instance/${subdomain}/watch/video-5`}
+              horizontal
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>

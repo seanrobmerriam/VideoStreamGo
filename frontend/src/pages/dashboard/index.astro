@@ -1,0 +1,66 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatsCard from '@components/admin/StatsCard.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Button from '@components/common/Button.astro';
+---
+
+<BaseLayout title="Dashboard - VideoStreamGo">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <Button variant="primary" href="/dashboard/instances/new">Create Instance</Button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatsCard title="Active Instances" value="3" trend="+1" />
+        <StatsCard title="Total Views" value="45.2K" trend="+12%" />
+        <StatsCard title="Storage Used" value="156 GB" trend="+8%" />
+        <StatsCard title="Monthly Cost" value="$49" trend="0%" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Your Instances</h2>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded">
+              <div>
+                <p class="font-medium">stream.example.com</p>
+                <p class="text-sm text-gray-500">Pro Plan</p>
+              </div>
+              <StatusBadge status="active" />
+            </div>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded">
+              <div>
+                <p class="font-medium">video.mysite.com</p>
+                <p class="text-sm text-gray-500">Starter Plan</p>
+              </div>
+              <StatusBadge status="active" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+          <div class="grid grid-cols-2 gap-4">
+            <a href="/dashboard/instances/new" class="p-4 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100">
+              <p class="font-medium text-indigo-700">Create Instance</p>
+            </a>
+            <a href="/dashboard/billing" class="p-4 bg-green-50 rounded-lg text-center hover:bg-green-100">
+              <p class="font-medium text-green-700">Manage Billing</p>
+            </a>
+            <a href="/dashboard/settings" class="p-4 bg-yellow-50 rounded-lg text-center hover:bg-yellow-100">
+              <p class="font-medium text-yellow-700">Settings</p>
+            </a>
+            <a href="/admin" class="p-4 bg-purple-50 rounded-lg text-center hover:bg-purple-100">
+              <p class="font-medium text-purple-700">Admin Panel</p>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>

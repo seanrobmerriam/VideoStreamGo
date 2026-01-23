@@ -1,0 +1,39 @@
+---
+interface Props {
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'neutral';
+  size?: 'sm' | 'md' | 'lg';
+  class?: string;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  class: className = '',
+} = Astro.props;
+
+const variantClasses = {
+  primary: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200',
+  secondary: 'bg-secondary-100 text-secondary-800 dark:bg-secondary-800 dark:text-secondary-200',
+  success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  danger: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  neutral: 'bg-secondary-100 text-secondary-800 dark:bg-secondary-700 dark:text-secondary-300',
+};
+
+const sizeClasses = {
+  sm: 'px-2 py-0.5 text-xs',
+  md: 'px-2.5 py-0.5 text-xs',
+  lg: 'px-3 py-1 text-sm',
+};
+
+const badgeClasses = [
+  'inline-flex items-center font-medium rounded-full',
+  variantClasses[variant],
+  sizeClasses[size],
+  className,
+].filter(Boolean).join(' ');
+---
+
+<span class={badgeClasses}>
+  <slot />
+</span>

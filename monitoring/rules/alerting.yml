@@ -1,0 +1,193 @@
+groups:
+  - name: videostreamgo-api
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is above 5% (current value: {{ $value | humanizePercentage }})"
+
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="platform-api"}[5m])) by (le))
+          > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on platform-api"
+          description: "p95 latency is above 1s (current value: {{ $value | humanizeDuration }})"
+
+      # Very high latency
+      - alert: VeryHighLatency
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service="platform-api"}[5m])) by (le))
+          > 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very high latency on platform-api"
+          description: "p99 latency is above 3s (current value: {{ $value | humanizeDuration }})"
+
+      # Pod not ready
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{namespace="videostreamgo",condition="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.pod }} is not ready"
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been not ready for more than 5 minutes"
+
+      # Pod restart loop
+      - alert: PodRestartLoop
+        expr: |
+          increase(kube_pod_container_status_restarts_total{namespace="videostreamgo"}[1h]) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod {{ $labels.pod }} is restarting frequently"
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has restarted more than 5 times in the last hour"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (container_memory_working_set_bytes{pod=~"platform-api.*",namespace="videostreamgo"}
+          /
+          container_spec_memory_limit_bytes{pod=~"platform-api.*",namespace="videostreamgo"})
+          > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on platform-api"
+          description: "Memory usage is above 85%"
+
+      # CPU throttling
+      - alert: CPUThrottling
+        expr: |
+          sum(rate(container_cpu_cfs_throttled_periods_total{pod=~"platform-api.*",namespace="videostreamgo"}[5m]))
+          /
+          sum(rate(container_cpu_cfs_periods_total{pod=~"platform-api.*",namespace="videostreamgo"}[5m]))
+          > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU throttling on platform-api"
+          description: "CPU throttling is above 20%"
+
+  - name: videostreamgo-database
+    rules:
+      # PostgreSQL connections high
+      - alert: PostgreSQLConnectionsHigh
+        expr: |
+          pg_stat_activity_count
+          /
+          pg_settings_max_connections
+          > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connections high"
+          description: "PostgreSQL connections are above 80% of max"
+
+      # PostgreSQL connections critical
+      - alert: PostgreSQLConnectionsCritical
+        expr: |
+          pg_stat_activity_count
+          /
+          pg_settings_max_connections
+          > 0.95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL connections critical"
+          description: "PostgreSQL connections are above 95% of max"
+
+      # PostgreSQL slow queries
+      - alert: PostgreSQLSlowQueries
+        expr: |
+          pg_stat_statements_mean_exec_time_seconds > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "Average query execution time is above 1s"
+
+  - name: videostreamgo-redis
+    rules:
+      # Redis memory high
+      - alert: RedisMemoryHigh
+        expr: |
+          redis_memory_used_bytes
+          /
+          redis_memory_maxbytes
+          > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is above 80%"
+
+      # Redis rejected connections
+      - alert: RedisRejectedConnections
+        expr: |
+          increase(redis_rejected_connections_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis rejected connections"
+          description: "Redis is rejecting connections due to max clients limit"
+
+  - name: videostreamgo-business
+    rules:
+      # Instance down
+      - alert: InstanceDown
+        expr: |
+          videostreamgo_instances_total{status="down"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Instance down"
+          description: "There are {{ $value }} instances that are down"
+
+      # Billing issues
+      - alert: BillingIssues
+        expr: |
+          increase(videostreamgo_billing_errors_total[1h]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Billing issues detected"
+          description: "More than 10 billing errors in the last hour"
+
+      # Video processing failures
+      - alert: VideoProcessingFailures
+        expr: |
+          increase(videostreamgo_video_transcodes_total{status="failed"}[1h]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Video processing failures"
+          description: "More than 10 video transcode failures in the last hour"

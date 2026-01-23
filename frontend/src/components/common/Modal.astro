@@ -1,0 +1,83 @@
+---
+interface Props {
+  id: string;
+  title?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  showClose?: boolean;
+}
+
+const { id, title, size = 'md', showClose = true } = Astro.props;
+
+const sizeClasses = {
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl',
+  full: 'max-w-full mx-4',
+};
+---
+
+<div
+  id={id}
+  class="fixed inset-0 z-50 hidden"
+  aria-labelledby={`${id}-title`}
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+      <div class:list={[
+        'relative transform overflow-hidden rounded-xl bg-white dark:bg-secondary-900 text-left shadow-xl transition-all sm:w-full',
+        sizeClasses[size],
+      ]} data-modal-panel>
+        {(title || showClose) && (
+          <div class="flex items-center justify-between px-6 py-4 border-b border-secondary-200 dark:border-secondary-700">
+            {title && (
+              <h3 id={`${id}-title`} class="text-lg font-semibold text-secondary-900 dark:text-secondary-100">
+                {title}
+              </h3>
+            )}
+            {showClose && (
+              <button type="button" class="text-secondary-400 hover:text-secondary-500" data-modal-close>
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
+        <div class="px-6 py-4">
+          <slot />
+        </div>
+
+        <slot name="footer" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ id }}>
+  const modal = document.getElementById(id);
+  const backdrop = modal?.querySelector('[data-modal-backdrop]');
+  const closeButton = modal?.querySelector('[data-modal-close]');
+
+  function closeModal() {
+    modal?.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  backdrop?.addEventListener('click', closeModal);
+  closeButton?.addEventListener('click', closeModal);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal?.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+
+  window[`closeModal_${id}`] = closeModal;
+  window[`openModal_${id}`] = () => modal?.classList.remove('hidden');
+</script>

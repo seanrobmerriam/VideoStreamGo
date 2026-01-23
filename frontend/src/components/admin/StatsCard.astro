@@ -1,0 +1,49 @@
+---
+interface Props {
+  title: string;
+  value: string | number;
+  change?: string;
+  changeType?: 'positive' | 'negative' | 'neutral';
+  icon?: string;
+  class?: string;
+}
+
+const {
+  title,
+  value,
+  change,
+  changeType = 'neutral',
+  icon,
+  class: className = '',
+} = Astro.props;
+
+const changeClasses = {
+  positive: 'text-green-600 dark:text-green-400',
+  negative: 'text-red-600 dark:text-red-400',
+  neutral: 'text-secondary-500 dark:text-secondary-400',
+};
+
+const iconBgClasses = {
+  primary: 'bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400',
+  green: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400',
+  yellow: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400',
+  purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
+};
+---
+
+<div class={`bg-white dark:bg-secondary-900 rounded-xl border border-secondary-200 dark:border-secondary-800 p-6 ${className}`}>
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500 dark:text-secondary-400">{title}</p>
+      <p class="mt-1 text-2xl font-bold text-secondary-900 dark:text-white">{value}</p>
+      {change && (
+        <p class={`mt-1 text-sm ${changeClasses[changeType]}`}>{change}</p>
+      )}
+    </div>
+    {icon && (
+      <div class={`h-12 w-12 rounded-lg flex items-center justify-center ${iconBgClasses.primary}`}>
+        <Fragment set:html={icon} />
+      </div>
+    )}
+  </div>
+</div>

@@ -1,0 +1,67 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Table from '@components/admin/Table.astro';
+import Button from '@components/common/Button.astro';
+---
+
+<BaseLayout title="Instances - VideoStreamGo Admin">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Instances</h1>
+        <Button variant="primary">Create Instance</Button>
+      </div>
+
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+          <input
+            type="text"
+            placeholder="Search instances..."
+            class="w-full max-w-md px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <Table 
+          headers={['Instance', 'Owner', 'Plan', 'Storage', 'Bandwidth', 'Status', 'Actions']}
+          rows={[
+            {
+              cells: [
+                'stream.example.com',
+                'John Doe',
+                'Enterprise',
+                '250 GB',
+                'Unlimited',
+                { component: StatusBadge, props: { status: 'active' } },
+                { component: 'a', href: '#', text: 'Manage', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            },
+            {
+              cells: [
+                'video.mysite.com',
+                'Jane Smith',
+                'Pro',
+                '100 GB',
+                '500 GB/mo',
+                { component: StatusBadge, props: { status: 'active' } },
+                { component: 'a', href: '#', text: 'Manage', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            },
+            {
+              cells: [
+                'watch.test.io',
+                'Bob Wilson',
+                'Starter',
+                '25 GB',
+                '100 GB/mo',
+                { component: StatusBadge, props: { status: 'suspended' } },
+                { component: 'a', href: '#', text: 'Manage', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            }
+          ]}
+        />
+      </div>
+    </main>
+  </div>
+</BaseLayout>

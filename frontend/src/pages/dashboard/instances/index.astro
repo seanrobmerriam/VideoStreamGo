@@ -1,0 +1,95 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Button from '@components/common/Button.astro';
+---
+
+<BaseLayout title="Instances - VideoStreamGo">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">My Instances</h1>
+        <Button variant="primary" href="/dashboard/instances/new">Create Instance</Button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">stream.example.com</h3>
+              <StatusBadge status="active" />
+            </div>
+            <p class="text-sm text-gray-500 mb-4">Pro Plan • Created Jan 15, 2024</p>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Views</span>
+                <span class="font-medium">12,456</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Videos</span>
+                <span class="font-medium">45</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Storage</span>
+                <span class="font-medium">52 GB</span>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 py-4 bg-gray-50 border-t flex gap-2">
+            <a href="/instance/stream.example.com" class="flex-1 text-center px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded">
+              View Site
+            </a>
+            <a href="/instance/stream.example.com/admin" class="flex-1 text-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">
+              Admin
+            </a>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">video.mysite.com</h3>
+              <StatusBadge status="active" />
+            </div>
+            <p class="text-sm text-gray-500 mb-4">Starter Plan • Created Feb 20, 2024</p>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Views</span>
+                <span class="font-medium">3,789</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Videos</span>
+                <span class="font-medium">12</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Storage</span>
+                <span class="font-medium">8 GB</span>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 py-4 bg-gray-50 border-t flex gap-2">
+            <a href="/instance/video.mysite.com" class="flex-1 text-center px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded">
+              View Site
+            </a>
+            <a href="/instance/video.mysite.com/admin" class="flex-1 text-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">
+              Admin
+            </a>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden border-2 border-dashed border-gray-200">
+          <div class="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
+            <a href="/dashboard/instances/new" class="text-center">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <p class="text-gray-500">Create New Instance</p>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>

@@ -1,0 +1,95 @@
+---
+# MinIO Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+    app.kubernetes.io/component: storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        command: ["server", "/data", "--console-address", ":9001"]
+        envFrom:
+        - secretRef:
+            name: minio-secrets
+        ports:
+        - containerPort: 9000
+          name: s3
+        - containerPort: 9001
+          name: console
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: minio-data
+          mountPath: /data
+      volumes:
+      - name: minio-data
+        persistentVolumeClaim:
+          claimName: minio-pvc
+---
+# MinIO S3 Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+spec:
+  selector:
+    app: minio
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: s3
+  clusterIP: None
+---
+# MinIO Console Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-console
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+spec:
+  selector:
+    app: minio
+  ports:
+  - port: 9001
+    targetPort: 9001
+    name: console
+  type: ClusterIP
+---
+# MinIO PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: videostreamgo
+  labels:
+    app.kubernetes.io/name: videostreamgo
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 100Gi

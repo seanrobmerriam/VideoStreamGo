@@ -1,0 +1,101 @@
+---
+import { $isMobileMenuOpen, $theme, toggleTheme, toggleMobileMenu } from '../../stores/ui';
+
+interface Props {
+  logo?: string;
+  title?: string;
+  showSearch?: boolean;
+}
+
+const { logo, title = 'VideoStreamGo', showSearch = false } = Astro.props;
+---
+
+<header class="sticky top-0 z-40 w-full border-b border-secondary-200 bg-white/80 backdrop-blur-lg dark:border-secondary-800 dark:bg-secondary-950/80">
+  <div class="container mx-auto px-4">
+    <div class="flex h-16 items-center justify-between">
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-4">
+        <a href="/" class="flex items-center gap-2">
+          {logo ? (
+            <img src={logo} alt={title} class="h-8 w-auto" />
+          ) : (
+            <svg class="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+            </svg>
+          )}
+          <span class="text-xl font-bold text-secondary-900 dark:text-secondary-100">{title}</span>
+        </a>
+      </div>
+
+      <!-- Search (optional) -->
+      {showSearch && (
+        <div class="hidden md:flex flex-1 max-w-md mx-8">
+          <div class="relative w-full">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Search videos..."
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-secondary-700 dark:bg-secondary-800 dark:focus:bg-secondary-900"
+            />
+          </div>
+        </div>
+      )}
+
+      <!-- Right side -->
+      <div class="flex items-center gap-2">
+        <!-- Theme toggle -->
+        <button
+          type="button"
+          class="btn-ghost p-2"
+          id="theme-toggle"
+          aria-label="Toggle theme"
+        >
+          <svg class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+          <svg class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+        </button>
+
+        <!-- Auth buttons -->
+        <div class="hidden md:flex items-center gap-2">
+          <a href="/login" class="btn-ghost text-sm">Sign In</a>
+          <a href="/signup" class="btn-primary text-sm">Get Started</a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button type="button" class="btn-ghost md:hidden p-2" id="mobile-menu-toggle" aria-label="Toggle menu">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div class="md:hidden hidden border-t border-secondary-200 dark:border-secondary-800" id="mobile-menu">
+    <div class="space-y-1 p-4">
+      <a href="/login" class="block btn-ghost w-full text-left">Sign In</a>
+      <a href="/signup" class="block btn-primary w-full text-center">Get Started</a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const themeToggle = document.getElementById('theme-toggle');
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  themeToggle?.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  });
+
+  mobileMenuToggle?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+</script>

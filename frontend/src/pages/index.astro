@@ -1,0 +1,239 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/common/Button.astro';
+import Card from '../components/common/Card.astro';
+import Badge from '../components/common/Badge.astro';
+
+const features = [
+  {
+    icon: '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>',
+    title: 'Lightning Fast',
+    description: 'Built on modern architecture for blazing fast video streaming and page loads.',
+  },
+  {
+    icon: '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>',
+    title: 'White-Label',
+    description: 'Fully customizable branding with your logo, colors, and domain.',
+  },
+  {
+    icon: '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>',
+    title: 'Analytics',
+    description: 'Comprehensive analytics dashboard with real-time metrics and insights.',
+  },
+  {
+    icon: '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>',
+    title: 'Secure',
+    description: 'Enterprise-grade security with role-based access control and encryption.',
+  },
+  {
+    icon: '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>',
+    title: 'Scalable',
+    description: 'Grow from hundreds to millions of users with our cloud-native platform.',
+  },
+  {
+    icon: '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>',
+    title: 'Easy Setup',
+    description: 'Launch your video platform in minutes with our intuitive setup wizard.',
+  },
+];
+
+const pricing = [
+  {
+    name: 'Starter',
+    price: '$29',
+    description: 'Perfect for getting started',
+    features: ['Up to 100 videos', '10GB storage', 'Basic analytics', 'Email support', 'Custom branding'],
+  },
+  {
+    name: 'Professional',
+    price: '$99',
+    popular: true,
+    description: 'For growing businesses',
+    features: ['Up to 1,000 videos', '100GB storage', 'Advanced analytics', 'Priority support', 'Custom domain', 'API access'],
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    description: 'For large organizations',
+    features: ['Unlimited videos', 'Unlimited storage', 'Custom analytics', '24/7 phone support', 'White-label license', 'SLA guarantee', 'Dedicated manager'],
+  },
+];
+
+const testimonials = [
+  {
+    quote: 'VideoStreamGo helped us launch our video platform in just 2 weeks. The white-label solution is exactly what we needed.',
+    author: 'Sarah Chen',
+    role: 'CEO, StreamLab',
+    avatar: '',
+  },
+  {
+    quote: 'The analytics and scalability are outstanding. We grew from 1,000 to 100,000 users without any issues.',
+    author: 'Marcus Johnson',
+    role: 'CTO, VideoHub',
+    avatar: '',
+  },
+  {
+    quote: 'Best investment we made for our content platform. The support team is exceptional.',
+    author: 'Emily Rodriguez',
+    role: 'Founder, CreatorSpace',
+    avatar: '',
+  },
+];
+---
+
+<BaseLayout title="Build Your Own Video Platform" description="Launch a white-label video streaming platform in minutes with VideoStreamGo">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden py-20 sm:py-32">
+    <div class="container mx-auto px-4">
+      <div class="mx-auto max-w-3xl text-center">
+        <Badge variant="primary" size="sm">Now with AI-Powered Recommendations</Badge>
+        <h1 class="mt-6 text-4xl font-bold tracking-tight text-secondary-900 dark:text-white sm:text-6xl">
+          Build Your Own
+          <span class="gradient-text">Video Platform</span>
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-secondary-600 dark:text-secondary-300">
+          Launch a fully customizable, white-label video streaming platform in minutes. 
+          No coding required—just your brand, your audience, your rules.
+        </p>
+        <div class="mt-10 flex items-center justify-center gap-4">
+          <Button href="/signup" size="lg">Start Free Trial</Button>
+          <Button href="/pricing" variant="outline" size="lg">View Pricing</Button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Background decoration -->
+    <div class="absolute inset-0 -z-10 overflow-hidden">
+      <div class="absolute -top-40 -left-40 h-80 w-80 rounded-full bg-primary-400/20 blur-3xl"></div>
+      <div class="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-primary-600/20 blur-3xl"></div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 sm:py-24">
+    <div class="container mx-auto px-4">
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="section-title">Everything You Need to Succeed</h2>
+        <p class="section-subtitle">
+          A complete video platform solution with all the features you need to grow your audience.
+        </p>
+      </div>
+      
+      <div class="mx-auto mt-16 max-w-6xl">
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <Card hover padding>
+              <div class="h-12 w-12 rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400 flex items-center justify-center">
+                <Fragment set:html={feature.icon} />
+              </div>
+              <h3 class="mt-4 text-lg font-semibold">{feature.title}</h3>
+              <p class="mt-2 text-secondary-600 dark:text-secondary-400">{feature.description}</p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="py-20 sm:py-24 bg-secondary-50 dark:bg-secondary-900/50">
+    <div class="container mx-auto px-4">
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="section-title">Simple, Transparent Pricing</h2>
+        <p class="section-subtitle">Choose the plan that's right for you. No hidden fees.</p>
+      </div>
+      
+      <div class="mx-auto mt-16 max-w-6xl">
+        <div class="grid gap-8 lg:grid-cols-3">
+          {pricing.map((plan) => (
+            <Card class:list={[
+              'relative',
+              plan.popular ? 'border-primary-500 ring-2 ring-primary-500/20' : ''
+            ]}>
+              {plan.popular && (
+                <Badge variant="primary" class="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+              )}
+              <div class="text-center">
+                <h3 class="text-xl font-semibold">{plan.name}</h3>
+                <p class="mt-2 text-secondary-600 dark:text-secondary-400">{plan.description}</p>
+                <div class="mt-4">
+                  <span class="text-4xl font-bold">{plan.price}</span>
+                  {plan.price !== 'Custom' && <span class="text-secondary-500">/month</span>}
+                </div>
+              </div>
+              <ul class space-y-3="mt-6">
+                {plan.features.map((feature) => (
+                  <li class="flex items-center gap-2 text-sm">
+                    <svg class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <div class="mt-6">
+                <Button 
+                  variant={plan.popular ? 'primary' : 'outline'} 
+                  fullWidth
+                >
+                  Get Started
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="py-20 sm:py-24">
+    <div class="container mx-auto px-4">
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="section-title">Loved by Creators</h2>
+        <p class="section-subtitle">See what our customers are saying about VideoStreamGo.</p>
+      </div>
+      
+      <div class="mx-auto mt-16 max-w-6xl">
+        <div class="grid gap-8 lg:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <Card>
+              <p class="text-lg text-secondary-700 dark:text-secondary-300">"{testimonial.quote}"</p>
+              <div class="mt-6 flex items-center gap-3">
+                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium">
+                  {testimonial.author.charAt(0)}
+                </div>
+                <div>
+                  <p class="font-medium">{testimonial.author}</p>
+                  <p class="text-sm text-secondary-500">{testimonial.role}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 sm:py-24 bg-primary-600">
+    <div class="container mx-auto px-4">
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Ready to Build Your Video Platform?
+        </h2>
+        <p class="mt-4 text-lg text-primary-100">
+          Start your free 14-day trial today. No credit card required.
+        </p>
+        <div class="mt-8 flex items-center justify-center gap-4">
+          <Button href="/signup" size="lg" class="bg-white text-primary-600 hover:bg-primary-50">
+            Start Free Trial
+          </Button>
+          <Button href="/contact" size="lg" variant="outline" class="border-white text-white hover:bg-primary-700">
+            Contact Sales
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,140 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Button from '@components/common/Button.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { subdomain: 'stream' } },
+    { params: { subdomain: 'video' } },
+    { params: { subdomain: 'watch' } },
+  ];
+}
+
+const { subdomain } = Astro.params;
+---
+
+<BaseLayout title="Videos - Admin">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar activePath={`/instance/${subdomain}/admin/videos`} />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Videos</h1>
+        <div class="flex gap-4">
+          <Button variant="outline">Import Videos</Button>
+          <Button variant="primary">Upload Video</Button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-6 border-b flex gap-4">
+          <input
+            type="text"
+            placeholder="Search videos..."
+            class="flex-1 max-w-md px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+          <select class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">All Categories</option>
+            <option value="tutorials">Tutorials</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="education">Education</option>
+          </select>
+          <select class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">All Status</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Video</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Category</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Views</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Likes</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Date</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center">
+                  <img src="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=120&h=68&fit=crop" alt="" class="w-32 h-18 object-cover rounded mr-3" />
+                  <span class="text-gray-900">Getting Started with Video Streaming</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">Tutorials</td>
+              <td class="py-4 px-4 text-sm text-gray-600">12.5K</td>
+              <td class="py-4 px-4 text-sm text-gray-600">1.2K</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="published" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Jan 15, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-green-600 hover:text-green-900 mr-3">Stats</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center">
+                  <img src="https://images.unsplash.com/photo-1574717432735-48876bc0d687?w=120&h=68&fit=crop" alt="" class="w-32 h-18 object-cover rounded mr-3" />
+                  <span class="text-gray-900">Advanced Video Editing Techniques</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">Tutorials</td>
+              <td class="py-4 px-4 text-sm text-gray-600">8.2K</td>
+              <td class="py-4 px-4 text-sm text-gray-600">892</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="published" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Jan 20, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-green-600 hover:text-green-900 mr-3">Stats</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center">
+                  <img src="https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=120&h=68&fit=crop" alt="" class="w-32 h-18 object-cover rounded mr-3" />
+                  <span class="text-gray-900">Live Streaming Setup Guide</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">Education</td>
+              <td class="py-4 px-4 text-sm text-gray-600">15.7K</td>
+              <td class="py-4 px-4 text-sm text-gray-600">2.1K</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="published" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Feb 1, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-green-600 hover:text-green-900 mr-3">Stats</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center">
+                  <img src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=120&h=68&fit=crop" alt="" class="w-32 h-18 object-cover rounded mr-3" />
+                  <span class="text-gray-900">Video Production Best Practices</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">Entertainment</td>
+              <td class="py-4 px-4 text-sm text-gray-600">5.3K</td>
+              <td class="py-4 px-4 text-sm text-gray-600">456</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="draft" /></td>
+              <td class="py-4 px-4 text-sm text-gray-600">Feb 15, 2024</td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-green-600 hover:text-green-900 mr-3">Stats</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</BaseLayout>

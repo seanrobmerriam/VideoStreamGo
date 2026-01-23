@@ -1,0 +1,100 @@
+---
+import { formatDuration, formatRelativeTime, formatNumber } from '../../lib/utils';
+
+interface Props {
+  id: string;
+  title: string;
+  thumbnail?: string;
+  duration?: number;
+  views?: number;
+  author?: { name: string; avatar?: string };
+  createdAt?: string;
+  href?: string;
+  featured?: boolean;
+}
+
+const {
+  id,
+  title,
+  thumbnail,
+  duration,
+  views,
+  author,
+  createdAt,
+  href = `/watch/${id}`,
+  featured = false,
+} = Astro.props;
+---
+
+<article class:list={[
+  'group relative overflow-hidden rounded-xl bg-white dark:bg-secondary-900',
+  featured ? 'md:grid md:grid-cols-2 md:gap-4' : 'card-hover'
+]}>
+  <a href={href} class:list={[
+    'block overflow-hidden',
+    featured ? 'aspect-video md:aspect-auto' : 'aspect-video'
+  ]}>
+    {thumbnail ? (
+      <img
+        src={thumbnail}
+        alt={title}
+        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      />
+    ) : (
+      <div class="flex h-full w-full items-center justify-center bg-secondary-100 dark:bg-secondary-800">
+        <svg class="h-12 w-12 text-secondary-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+        </svg>
+      </div>
+    )}
+    
+    {duration && (
+      <div class="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
+        {formatDuration(duration)}
+      </div>
+    )}
+  </a>
+  
+  <div class:list={[
+    'p-4',
+    featured ? 'flex flex-col justify-center' : ''
+  ]}>
+    <a href={href} class="group/title">
+      <h3 class:list={[
+        'font-semibold text-secondary-900 dark:text-secondary-100 line-clamp-2 transition-colors group-hover/title:text-primary-600 dark:group-hover/title:text-primary-400',
+        featured ? 'text-xl' : 'text-base'
+      ]}>
+        {title}
+      </h3>
+    </a>
+    
+    <div class="mt-2 flex items-center gap-2 text-sm text-secondary-500 dark:text-secondary-400">
+      {author && (
+        <span class="flex items-center gap-1">
+          {author.avatar ? (
+            <img src={author.avatar} alt={author.name} class="h-6 w-6 rounded-full" />
+          ) : (
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+              {author.name.charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span>{author.name}</span>
+        </span>
+      )}
+      
+      {views !== undefined && (
+        <>
+          <span>•</span>
+          <span>{formatNumber(views)} views</span>
+        </>
+      )}
+      
+      {createdAt && (
+        <>
+          <span>•</span>
+          <span>{formatRelativeTime(createdAt)}</span>
+        </>
+      )}
+    </div>
+  </div>
+</article>

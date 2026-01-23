@@ -1,0 +1,67 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Table from '@components/admin/Table.astro';
+import Button from '@components/common/Button.astro';
+---
+
+<BaseLayout title="Customers - VideoStreamGo Admin">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Customers</h1>
+        <Button variant="primary">Export CSV</Button>
+      </div>
+
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+          <input
+            type="text"
+            placeholder="Search customers..."
+            class="w-full max-w-md px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <Table 
+          headers={['Customer', 'Company', 'Instances', 'Subscription', 'Status', 'Joined', 'Actions']}
+          rows={[
+            {
+              cells: [
+                'John Doe',
+                'Acme Inc.',
+                '3',
+                'Enterprise',
+                { component: StatusBadge, props: { status: 'active' } },
+                'Jan 15, 2024',
+                { component: 'a', href: '#', text: 'View', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            },
+            {
+              cells: [
+                'Jane Smith',
+                'TechCorp',
+                '1',
+                'Pro',
+                { component: StatusBadge, props: { status: 'active' } },
+                'Feb 20, 2024',
+                { component: 'a', href: '#', text: 'View', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            },
+            {
+              cells: [
+                'Bob Wilson',
+                'Wilson LLC',
+                '2',
+                'Starter',
+                { component: StatusBadge, props: { status: 'inactive' } },
+                'Mar 10, 2024',
+                { component: 'a', href: '#', text: 'View', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            }
+          ]}
+        />
+      </div>
+    </main>
+  </div>
+</BaseLayout>

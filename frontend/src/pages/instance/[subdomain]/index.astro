@@ -1,0 +1,97 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/layout/Header.astro';
+import Footer from '@components/layout/Footer.astro';
+import VideoCard from '@components/video/VideoCard.astro';
+import VideoGrid from '@components/video/VideoGrid.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { subdomain: 'stream' } },
+    { params: { subdomain: 'video' } },
+    { params: { subdomain: 'watch' } },
+  ];
+}
+
+const { subdomain } = Astro.params;
+---
+
+<BaseLayout title="Home - Video Site">
+  <Header />
+  <main class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Featured Videos</h1>
+        <p class="text-gray-600 mt-2">Discover the latest and greatest videos</p>
+      </div>
+
+      <VideoGrid>
+        <VideoCard 
+          title="Getting Started with Video Streaming"
+          thumbnail="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=640&h=360&fit=crop"
+          views="12.5K"
+          duration="12:34"
+          href={`/instance/${subdomain}/watch/video-1`}
+        />
+        <VideoCard 
+          title="Advanced Video Editing Techniques"
+          thumbnail="https://images.unsplash.com/photo-1574717432735-48876bc0d687?w=640&h=360&fit=crop"
+          views="8.2K"
+          duration="24:18"
+          href={`/instance/${subdomain}/watch/video-2`}
+        />
+        <VideoCard 
+          title="Live Streaming Setup Guide"
+          thumbnail="https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=640&h=360&fit=crop"
+          views="15.7K"
+          duration="18:45"
+          href={`/instance/${subdomain}/watch/video-3`}
+        />
+        <VideoCard 
+          title="Video Production Best Practices"
+          thumbnail="https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=640&h=360&fit=crop"
+          views="5.3K"
+          duration="15:22"
+          href={`/instance/${subdomain}/watch/video-4`}
+        />
+        <VideoCard 
+          title="Audio Mixing for Video"
+          thumbnail="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=640&h=360&fit=crop"
+          views="3.1K"
+          duration="20:10"
+          href={`/instance/${subdomain}/watch/video-5`}
+        />
+        <VideoCard 
+          title="Color Grading Fundamentals"
+          thumbnail="https://images.unsplash.com/photo-1533089862017-5614a9571468?w=640&h=360&fit=crop"
+          views="7.8K"
+          duration="16:55"
+          href={`/instance/${subdomain}/watch/video-6`}
+        />
+      </VideoGrid>
+
+      <div class="mt-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Categories</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a href="#" class="bg-white rounded-lg shadow p-4 text-center hover:shadow-md transition-shadow">
+            <p class="font-medium text-gray-900">Tutorials</p>
+            <p class="text-sm text-gray-500">45 videos</p>
+          </a>
+          <a href="#" class="bg-white rounded-lg shadow p-4 text-center hover:shadow-md transition-shadow">
+            <p class="font-medium text-gray-900">Entertainment</p>
+            <p class="text-sm text-gray-500">128 videos</p>
+          </a>
+          <a href="#" class="bg-white rounded-lg shadow p-4 text-center hover:shadow-md transition-shadow">
+            <p class="font-medium text-gray-900">Education</p>
+            <p class="text-sm text-gray-500">67 videos</p>
+          </a>
+          <a href="#" class="bg-white rounded-lg shadow p-4 text-center hover:shadow-md transition-shadow">
+            <p class="font-medium text-gray-900">Live</p>
+            <p class="text-sm text-gray-500">3 streams</p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,98 @@
+---
+interface Column {
+  key?: string;
+  header: string;
+  render?: (item: any) => any;
+  class?: string;
+  align?: 'left' | 'center' | 'right';
+}
+
+interface Props {
+  headers: string[];
+  rows: {
+    cells: (string | { component: any; props?: Record<string, any>; align?: string; class?: string; href?: string; text?: string; children?: any[] })[];
+  }[];
+  class?: string;
+}
+
+const { headers, rows, class: className = '' } = Astro.props;
+---
+
+<div class={`overflow-x-auto ${className}`}>
+  <table class="w-full">
+    <thead>
+      <tr class="border-b border-gray-200">
+        {headers.map((header) => (
+          <th class="text-left py-3 px-4 text-sm font-medium text-gray-500 whitespace-nowrap">
+            {header}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+          {row.cells.map((cell) => {
+            if (typeof cell === 'string') {
+              return <td class="py-4 px-4 text-sm text-gray-900">{cell}</td>;
+            }
+            
+            const { component: Component, props = {}, align, class: cellClass, href, text, children } = cell;
+            
+            if (Component === 'a' && href) {
+              return (
+                <td class={`py-4 px-4 text-sm ${cellClass || ''} ${align === 'center' ? 'text-center' : ''} ${align === 'right' ? 'text-right' : ''}`}>
+                  <a href={href}>{text}</a>
+                </td>
+              );
+            }
+            
+            if (Component === 'button') {
+              return (
+                <td class={`py-4 px-4 text-sm ${cellClass || ''} ${align === 'center' ? 'text-center' : ''} ${align === 'right' ? 'text-right' : ''}`}>
+                  <button>{text}</button>
+                </td>
+              );
+            }
+            
+            if (Component === 'div') {
+              return (
+                <td class={`py-4 px-4 text-sm ${cellClass || ''} ${align === 'center' ? 'text-center' : ''} ${align === 'right' ? 'text-right' : ''}`}>
+                  <div>{children?.map((child: any) => {
+                    if (typeof child === 'string') return child;
+                    const { component: C, text: t, class: c, href: h } = child;
+                    if (C === 'a' && h) return <a href={h} class={c}>{t}</a>;
+                    if (C === 'button') return <button class={c}>{t}</button>;
+                    return null;
+                  })}</div>
+                </td>
+              );
+            }
+            
+            if (Component === 'img') {
+              return (
+                <td class={`py-4 px-4 text-sm ${cellClass || ''} ${align === 'center' ? 'text-center' : ''} ${align === 'right' ? 'text-right' : ''}`}>
+                  <img {...props} />
+                </td>
+              );
+            }
+            
+            if (Component === 'span') {
+              return (
+                <td class={`py-4 px-4 text-sm ${cellClass || ''} ${align === 'center' ? 'text-center' : ''} ${align === 'right' ? 'text-right' : ''}`}>
+                  <span {...props}>{text}</span>
+                </td>
+              );
+            }
+            
+            return (
+              <td class={`py-4 px-4 text-sm ${cellClass || ''} ${align === 'center' ? 'text-center' : ''} ${align === 'right' ? 'text-right' : ''}`}>
+                <Component {...props} />
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

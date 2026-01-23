@@ -1,0 +1,82 @@
+---
+interface Props {
+  id: string;
+  name: string;
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
+  label?: string;
+  placeholder?: string;
+  value?: string;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  class?: string;
+  helperText?: string;
+  autocomplete?: string;
+  minlength?: number;
+}
+
+const {
+  id,
+  name,
+  type = 'text',
+  label,
+  placeholder,
+  value,
+  error,
+  required = false,
+  disabled = false,
+  class: className = '',
+  helperText,
+  autocomplete,
+  minlength,
+} = Astro.props;
+---
+
+<div class="space-y-1">
+  {label && (
+    <label for={id} class="block text-sm font-medium text-secondary-700 dark:text-secondary-300">
+      {label}
+      {required && <span class="text-red-500 ml-1">*</span>}
+    </label>
+  )}
+  
+  <div class="relative">
+    <input
+      id={id}
+      name={name}
+      type={type}
+      {placeholder}
+      {value}
+      {required}
+      {disabled}
+      {autocomplete}
+      minlength={minlength ? minlength : undefined}
+      class:list={[
+        'input',
+        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : '',
+        disabled ? 'opacity-50 cursor-not-allowed' : '',
+        className,
+      ]}
+    />
+    
+    {error && (
+      <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+        <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+    )}
+  </div>
+  
+  {error && (
+    <p class="text-sm text-red-600 dark:text-red-400">{error}</p>
+  )}
+  
+  {helperText && !error && (
+    <p class="text-sm text-secondary-500 dark:text-secondary-400">{helperText}</p>
+  )}
+</div>

@@ -1,0 +1,122 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Button from '@components/common/Button.astro';
+import Avatar from '@components/common/Avatar.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { subdomain: 'stream' } },
+    { params: { subdomain: 'video' } },
+    { params: { subdomain: 'watch' } },
+  ];
+}
+
+const { subdomain } = Astro.params;
+---
+
+<BaseLayout title="Users - Admin">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar activePath={`/instance/${subdomain}/admin/users`} />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Users</h1>
+        <Button variant="primary">Add User</Button>
+      </div>
+
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+          <input
+            type="text"
+            placeholder="Search users..."
+            class="w-full max-w-md px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">User</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Email</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Role</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Videos</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Joined</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center gap-3">
+                  <Avatar src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" alt="John Doe" />
+                  <span class="text-gray-900">John Doe</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">john@example.com</td>
+              <td class="py-4 px-4 text-sm text-gray-900">Admin</td>
+              <td class="py-4 px-4 text-sm text-gray-600">45</td>
+              <td class="py-4 px-4 text-sm text-gray-600">Jan 15, 2024</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="active" /></td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center gap-3">
+                  <Avatar src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Jane Smith" />
+                  <span class="text-gray-900">Jane Smith</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">jane@example.com</td>
+              <td class="py-4 px-4 text-sm text-gray-900">Moderator</td>
+              <td class="py-4 px-4 text-sm text-gray-600">12</td>
+              <td class="py-4 px-4 text-sm text-gray-600">Jan 20, 2024</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="active" /></td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center gap-3">
+                  <Avatar src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" alt="Bob Wilson" />
+                  <span class="text-gray-900">Bob Wilson</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">bob@example.com</td>
+              <td class="py-4 px-4 text-sm text-gray-900">User</td>
+              <td class="py-4 px-4 text-sm text-gray-600">3</td>
+              <td class="py-4 px-4 text-sm text-gray-600">Feb 1, 2024</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="active" /></td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm">
+                <div class="flex items-center gap-3">
+                  <Avatar src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" alt="Alice Brown" />
+                  <span class="text-gray-900">Alice Brown</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-600">alice@example.com</td>
+              <td class="py-4 px-4 text-sm text-gray-900">User</td>
+              <td class="py-4 px-4 text-sm text-gray-600">0</td>
+              <td class="py-4 px-4 text-sm text-gray-600">Feb 15, 2024</td>
+              <td class="py-4 px-4 text-sm"><StatusBadge status="inactive" /></td>
+              <td class="py-4 px-4 text-sm">
+                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                <button class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</BaseLayout>

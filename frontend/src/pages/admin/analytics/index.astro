@@ -1,0 +1,70 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatsCard from '@components/admin/StatsCard.astro';
+---
+
+<BaseLayout title="Analytics - VideoStreamGo Admin">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold">Analytics</h1>
+        <select class="px-4 py-2 border rounded-lg bg-white">
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+          <option>Last 90 days</option>
+          <option>This year</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatsCard title="Total Views" value="1.2M" trend="+23%" />
+        <StatsCard title="Unique Visitors" value="456K" trend="+18%" />
+        <StatsCard title="Avg. Watch Time" value="12:34" trend="+5%" />
+        <StatsCard title="Revenue" value="$45,678" trend="+12%" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Views Over Time</h2>
+          <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
+            <span class="text-gray-400">Chart placeholder</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Top Instances</h2>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded">
+              <span class="font-medium">stream.example.com</span>
+              <span class="text-gray-600">245K views</span>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded">
+              <span class="font-medium">video.mysite.com</span>
+              <span class="text-gray-600">189K views</span>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded">
+              <span class="font-medium">watch.test.io</span>
+              <span class="text-gray-600">98K views</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Storage Usage</h2>
+          <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
+            <span class="text-gray-400">Chart placeholder</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Geographic Distribution</h2>
+          <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
+            <span class="text-gray-400">Map placeholder</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>

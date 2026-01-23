@@ -1,0 +1,59 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import StatsCard from '@components/admin/StatsCard.astro';
+import StatusBadge from '@components/admin/StatusBadge.astro';
+import Table from '@components/admin/Table.astro';
+---
+
+<BaseLayout title="Admin Dashboard - VideoStreamGo">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <h1 class="text-2xl font-bold mb-8">Admin Dashboard</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatsCard title="Total Instances" value="156" trend="+12%" />
+        <StatsCard title="Active Users" value="2,847" trend="+8%" />
+        <StatsCard title="Revenue (MTD)" value="$12,450" trend="+15%" />
+        <StatsCard title="Storage Used" value="847 GB" trend="+5%" />
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Recent Activity</h2>
+        <Table 
+          headers={['Instance', 'Status', 'Users', 'Last Active', 'Actions']}
+          rows={[
+            {
+              cells: [
+                'stream.example.com',
+                { component: StatusBadge, props: { status: 'active' } },
+                '1,234',
+                '2 minutes ago',
+                { component: 'a', href: '/admin/instances', text: 'View', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            },
+            {
+              cells: [
+                'video.mysite.com',
+                { component: StatusBadge, props: { status: 'active' } },
+                '567',
+                '15 minutes ago',
+                { component: 'a', href: '/admin/instances', text: 'View', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            },
+            {
+              cells: [
+                'watch.test.io',
+                { component: StatusBadge, props: { status: 'suspended' } },
+                '89',
+                '1 hour ago',
+                { component: 'a', href: '/admin/instances', text: 'View', class: 'text-indigo-600 hover:text-indigo-900' }
+              ]
+            }
+          ]}
+        />
+      </div>
+    </main>
+  </div>
+</BaseLayout>

@@ -1,0 +1,197 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Sidebar from '@components/layout/Sidebar.astro';
+import Button from '@components/common/Button.astro';
+import Input from '@components/common/Input.astro';
+import Tabs from '@components/common/Tabs.astro';
+---
+
+<BaseLayout title="Settings - VideoStreamGo">
+  <div class="flex h-screen bg-gray-100">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto p-8">
+      <h1 class="text-2xl font-bold mb-8">Settings</h1>
+
+      <Tabs 
+        tabs={[
+          { id: 'profile', label: 'Profile', active: true },
+          { id: 'security', label: 'Security' },
+          { id: 'notifications', label: 'Notifications' },
+          { id: 'api', label: 'API Keys' }
+        ]}
+      >
+        <div id="profile" class="tab-content">
+          <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4">Profile Settings</h2>
+            
+            <div class="space-y-4">
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <Input id="name" name="name" type="text" value="John Doe" />
+              </div>
+
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <Input id="email" name="email" type="email" value="john@example.com" />
+              </div>
+
+              <div>
+                <label for="company" class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <Input id="company" name="company" type="text" placeholder="Your company name" />
+              </div>
+
+              <div>
+                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                <select id="timezone" name="timezone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">Eastern Time (ET)</option>
+                  <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                  <option value="Europe/London">London (GMT)</option>
+                </select>
+              </div>
+
+              <div class="pt-4">
+                <Button variant="primary">Save Changes</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="security" class="tab-content hidden">
+          <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4">Security Settings</h2>
+            
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-md font-medium mb-2">Change Password</h3>
+                <div class="space-y-4">
+                  <div>
+                    <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <Input id="current_password" name="current_password" type="password" />
+                  </div>
+                  <div>
+                    <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <Input id="new_password" name="new_password" type="password" />
+                  </div>
+                  <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <Input id="confirm_password" name="confirm_password" type="password" />
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              <div>
+                <h3 class="text-md font-medium mb-2">Two-Factor Authentication</h3>
+                <p class="text-sm text-gray-500 mb-4">Add an extra layer of security to your account</p>
+                <Button variant="outline">Enable 2FA</Button>
+              </div>
+
+              <div class="pt-4">
+                <Button variant="primary">Update Password</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="notifications" class="tab-content hidden">
+          <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4">Notification Preferences</h2>
+            
+            <div class="space-y-4">
+              <div class="flex items-center justify-between py-3 border-b">
+                <div>
+                  <p class="font-medium">Email Notifications</p>
+                  <p class="text-sm text-gray-500">Receive email updates about your account</p>
+                </div>
+                <input type="checkbox" checked class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+              </div>
+
+              <div class="flex items-center justify-between py-3 border-b">
+                <div>
+                  <p class="font-medium">Instance Alerts</p>
+                  <p class="text-sm text-gray-500">Get notified when instances need attention</p>
+                </div>
+                <input type="checkbox" checked class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+              </div>
+
+              <div class="flex items-center justify-between py-3 border-b">
+                <div>
+                  <p class="font-medium">Billing Updates</p>
+                  <p class="text-sm text-gray-500">Receive invoices and payment reminders</p>
+                </div>
+                <input type="checkbox" checked class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+              </div>
+
+              <div class="flex items-center justify-between py-3">
+                <div>
+                  <p class="font-medium">Marketing Emails</p>
+                  <p class="text-sm text-gray-500">Receive news and promotional offers</p>
+                </div>
+                <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+              </div>
+
+              <div class="pt-4">
+                <Button variant="primary">Save Preferences</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="api" class="tab-content hidden">
+          <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4">API Keys</h2>
+            
+            <div class="space-y-4">
+              <div class="p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                  <p class="font-medium">Production Key</p>
+                  <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">Active</span>
+                </div>
+                <code class="text-sm text-gray-600">vs_live_••••••••••••••••</code>
+                <p class="text-xs text-gray-400 mt-1">Created Jan 15, 2024</p>
+              </div>
+
+              <div class="p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                  <p class="font-medium">Development Key</p>
+                  <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">Limited</span>
+                </div>
+                <code class="text-sm text-gray-600">vs_test_••••••••••••••••</code>
+                <p class="text-xs text-gray-400 mt-1">Created Feb 20, 2024</p>
+              </div>
+
+              <div class="pt-4">
+                <Button variant="outline">Generate New Key</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Tabs>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  const tabButtons = document.querySelectorAll('[data-tab]');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const tabId = button.getAttribute('data-tab');
+      
+      tabButtons.forEach(btn => btn.classList.remove('border-indigo-600', 'text-indigo-600'));
+      tabButtons.forEach(btn => btn.classList.add('border-transparent', 'text-gray-500'));
+      
+      button.classList.remove('border-transparent', 'text-gray-500');
+      button.classList.add('border-indigo-600', 'text-indigo-600');
+      
+      tabContents.forEach(content => {
+        content.classList.add('hidden');
+      });
+      
+      document.getElementById(tabId)?.classList.remove('hidden');
+    });
+  });
+</script>
