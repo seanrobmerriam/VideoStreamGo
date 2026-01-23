@@ -1,0 +1,193 @@
+services:
+  # PostgreSQL Master Database
+  postgres-master:
+    image: postgres:15-alpine
+    container_name: videostreamgo-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-videostreamgo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword}
+      POSTGRES_DB: ${MASTER_DB_NAME:-videostreamgo_master}
+    volumes:
+      - postgres_master_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - videostreamgo_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-videostreamgo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: videostreamgo-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - videostreamgo_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MinIO for S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: videostreamgo-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - videostreamgo_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # Platform API Service
+  platform-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.platform-api
+    container_name: videostreamgo-platform-api
+    environment:
+      - MASTER_DB_HOST=postgres-master
+      - MASTER_DB_PORT=5432
+      - MASTER_DB_USER=${POSTGRES_USER:-videostreamgo}
+      - MASTER_DB_PASSWORD=${POSTGRES_PASSWORD:-securepassword}
+      - MASTER_DB_NAME=${MASTER_DB_NAME:-videostreamgo_master}
+      - MASTER_DB_SSLMODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - S3_USE_SSL=false
+      - S3_BUCKET=videostreamgo
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key}
+      - APP_ENV=development
+      - APP_PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - videostreamgo_network
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Instance API Service
+  instance-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.instance-api
+    container_name: videostreamgo-instance-api
+    environment:
+      - MASTER_DB_HOST=postgres-master
+      - MASTER_DB_PORT=5432
+      - MASTER_DB_USER=${POSTGRES_USER:-videostreamgo}
+      - MASTER_DB_PASSWORD=${POSTGRES_PASSWORD:-securepassword}
+      - MASTER_DB_SSLMODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - S3_USE_SSL=false
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key}
+      - APP_ENV=development
+      - APP_PORT=8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - videostreamgo_network
+    restart: unless-stopped
+
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: videostreamgo-frontend
+    environment:
+      - API_URL=http://platform-api:8080/v1
+      - PUBLIC_INSTANCE_ID=platform
+    ports:
+      - "3000:3000"
+    depends_on:
+      platform-api:
+        condition: service_healthy
+    networks:
+      - videostreamgo_network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (commented out - requires nginx config files)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: videostreamgo-nginx
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/sites:/etc/nginx/sites:ro
+  #     - ./nginx/certs:/etc/nginx/certs:ro
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   depends_on:
+  #     - frontend
+  #     - platform-api
+  #     - instance-api
+  #   networks:
+  #     - videostreamgo_network
+  #   healthcheck:
+  #     test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   restart: unless-stopped
+
+networks:
+  videostreamgo_network:
+    driver: bridge
+
+volumes:
+  postgres_master_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local

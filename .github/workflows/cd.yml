@@ -1,0 +1,176 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      rollback:
+        description: 'Rollback to previous version'
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-environment.outputs.environment }}
+      tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment
+        id: set-environment
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set image tag
+        id: set-tag
+        run: |
+          echo "tag=sha-$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
+          echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Display deployment info
+        run: |
+          echo "Deploying to: ${{ steps.set-environment.outputs.environment }}"
+          echo "Image tag: ${{ steps.set-tag.outputs.tag }}"
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG_STAGING }}
+
+      - name: Create Kubernetes namespace
+        run: |
+          kubectl create namespace videostreamgo-staging --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create secrets
+        run: |
+          kubectl create secret generic videostreamgo-secrets \
+            --from-literal=DB_PASSWORD=${{ secrets.DB_PASSWORD_STAGING }} \
+            --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET_STAGING }} \
+            --from-literal=STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+            --from-literal=STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
+            --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --namespace videostreamgo-staging \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/platform-api platform-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/platform-api:${{ needs.prepare.outputs.tag }} \
+            --namespace videostreamgo-staging
+          kubectl set image deployment/instance-api instance-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/instance-api:${{ needs.prepare.outputs.tag }} \
+            --namespace videostreamgo-staging
+          kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ needs.prepare.outputs.tag }} \
+            --namespace videostreamgo-staging
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/platform-api --namespace videostreamgo-staging --timeout=300s
+          kubectl rollout status deployment/instance-api --namespace videostreamgo-staging --timeout=300s
+          kubectl rollout status deployment/frontend --namespace videostreamgo-staging --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          echo "## Deployment Verification" >> $GITHUB_STEP_SUMMARY
+          echo "### Platform API" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment platform-api --namespace videostreamgo-staging
+          echo "### Instance API" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment instance-api --namespace videostreamgo-staging
+          echo "### Frontend" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment frontend --namespace videostreamgo-staging
+
+  deploy-production:
+    name: Deploy to Production
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG_PRODUCTION }}
+
+      - name: Create Kubernetes namespace
+        run: |
+          kubectl create namespace videostreamgo --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create secrets
+        run: |
+          kubectl create secret generic videostreamgo-secrets \
+            --from-literal=DB_PASSWORD=${{ secrets.DB_PASSWORD_PRODUCTION }} \
+            --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET_PRODUCTION }} \
+            --from-literal=STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+            --from-literal=STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
+            --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --namespace videostreamgo \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/platform-api platform-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/platform-api:${{ needs.prepare.outputs.tag }} \
+            --namespace videostreamgo
+          kubectl set image deployment/instance-api instance-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/instance-api:${{ needs.prepare.outputs.tag }} \
+            --namespace videostreamgo
+          kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ needs.prepare.outputs.tag }} \
+            --namespace videostreamgo
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/platform-api --namespace videostreamgo --timeout=300s
+          kubectl rollout status deployment/instance-api --namespace videostreamgo --timeout=300s
+          kubectl rollout status deployment/frontend --namespace videostreamgo --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          echo "## Deployment Verification" >> $GITHUB_STEP_SUMMARY
+          echo "### Platform API" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment platform-api --namespace videostreamgo
+          echo "### Instance API" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment instance-api --namespace videostreamgo
+          echo "### Frontend" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment frontend --namespace videostreamgo
+
+      - name: Health check
+        run: |
+          echo "### Health Check" >> $GITHUB_STEP_SUMMARY
+          curl -f https://api.videostreamgo.com/health || echo "Health check endpoint not available yet"

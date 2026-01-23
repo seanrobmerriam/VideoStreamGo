@@ -1,0 +1,42 @@
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copy go module files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w" \
+    -o instance-api ./cmd/instance-api/
+
+# Final stage - minimal runtime image
+FROM alpine:3.19
+
+# Install ca-certificates for HTTPS connections and dumb-init for proper signal handling
+RUN apk --no-cache add ca-certificates dumb-init
+
+# Create non-root user for security
+RUN addgroup -g 1001 appgroup && \
+    adduser -u 1001 -G appgroup -s /bin/sh -D appuser
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/instance-api .
+COPY --from=builder /app/internal/database/migrations ./internal/database/migrations
+
+# Change ownership to non-root user
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 8081
+
+# Use dumb-init to properly handle signals
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["./instance-api"]
