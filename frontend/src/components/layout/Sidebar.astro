@@ -1,4 +1,5 @@
 ---
+import { Icon } from 'astro-icon/components';
 interface Props {
   items?: { label: string; href: string; icon?: string }[];
   title?: string;
@@ -19,7 +20,7 @@ const { items = [], title = 'Menu' } = Astro.props;
         {items.map((item) => (
           <li>
             <a href={item.href} class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-secondary-700 hover:bg-secondary-100 hover:text-primary-600 dark:text-secondary-300 dark:hover:bg-secondary-800 dark:hover:text-primary-400">
-              {item.icon && <span class="h-5 w-5" set:html={item.icon} />}
+              {item.icon && <Icon name={item.icon} class="h-5 w-5" />}
               {item.label}
             </a>
           </li>

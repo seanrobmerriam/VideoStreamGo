@@ -92,7 +92,17 @@ export const throttle = <T extends (...args: unknown[]) => unknown>(
 
 // Deep clone object
 export const deepClone = <T>(obj: T): T => {
-  return JSON.parse(JSON.stringify(obj));
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  
+  try {
+    return structuredClone(obj);
+  } catch (error) {
+    throw new Error(
+      `Failed to clone object: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 };
 
 // Check if object is empty

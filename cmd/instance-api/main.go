@@ -50,8 +50,8 @@ func main() {
 	// Setup instance routes
 	instance.SetupRoutes(router, dbManager, cfg)
 
-	// Start server on port 8081
-	addr := fmt.Sprintf(":%d", cfg.App.Port+1) // Use Port + 1 for instance API
+	// Start server
+	addr := fmt.Sprintf(":%d", cfg.App.Port)
 	log.Printf("Starting Instance API server on %s", addr)
 	if err := router.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
