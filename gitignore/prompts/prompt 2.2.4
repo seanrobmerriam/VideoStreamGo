@@ -1,0 +1,91 @@
+Prompt 2.2.4: Build Homepage
+Objective: Create the main homepage with all components integrated.
+Instructions for AI Agent:
+
+Create the homepage in src/pages/index.astro:
+
+1. Import necessary components:
+   - BaseLayout
+   - Sidebar
+   - FilterBar
+   - VideoGrid
+   - Pagination
+
+2. Load mock data:
+   - Get categories from mockData
+   - Get tags from mockData
+   - Get videos with default filters (newest, page 1, limit 20)
+
+3. Page structure:
+
+<BaseLayout title="Home - VideoTube">
+     <div class="container"> <!-- Max width container -->
+       <div class="layout"> <!-- Flex container -->
+     <!-- Left Sidebar -->
+     <aside class="sidebar">
+       <Sidebar categories={categories} />
+     </aside>
+
+     <!-- Main Content -->
+     <main class="main-content">
+       
+       <!-- Filter Bar -->
+       <FilterBar 
+         tags={tags}
+         activeTags={[]}
+         sortBy="newest"
+       />
+
+       <!-- Video Grid -->
+       <VideoGrid videos={videos} />
+
+       <!-- Pagination -->
+       <Pagination pagination={paginationData} />
+
+     </main>
+
+   </div>
+ </div>
+   </BaseLayout>
+
+1. Layout specifications:
+
+Container: max-width 1400px, centered
+Sidebar: fixed width 240px on desktop, hidden on mobile (add toggle button)
+Main content: flex-grow, min-width 0
+Gap between sidebar and content: 2rem
+Padding: 1rem on mobile, 2rem on desktop
+
+
+2. Responsive behavior:
+
+Mobile (<768px):
+
+Hide sidebar by default
+Add hamburger menu to show/hide sidebar
+Full width content
+
+
+Tablet (768px-1024px):
+
+Smaller sidebar (200px)
+2-3 videos per row
+
+
+Desktop (>1024px):
+
+Full sidebar (240px)
+4-5 videos per row
+
+
+
+
+3. Add loading states (placeholders):
+
+Show skeleton screens where videos would load
+Will be replaced with real loading logic later
+
+
+
+
+DELIVERABLE: Complete homepage with all components integrated, responsive design, and mock data displayed.

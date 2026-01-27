@@ -6,22 +6,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"videostreamgo/internal/auth"
+	"videostreamgo/internal/cache"
 	"videostreamgo/internal/config"
 	handlers "videostreamgo/internal/handlers/platform"
 	"videostreamgo/internal/middleware"
-	"videostreamgo/internal/repository/master"
+	masterModels "videostreamgo/internal/models/master"
+	masterRepo "videostreamgo/internal/repository/master"
 	platformsvc "videostreamgo/internal/services/platform"
 )
 
 // SetupRoutes configures all platform API routes
-func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config, redisClient *cache.RedisClient) {
 	// Initialize repositories
-	adminRepo := master.NewAdminRepository(db)
-	customerRepo := master.NewCustomerRepository(db)
-	instanceRepo := master.NewInstanceRepository(db)
-	subscriptionRepo := master.NewSubscriptionRepository(db)
-	planRepo := master.NewPlanRepository(db)
-	billingRepo := master.NewBillingRecordRepository(db)
+	adminRepo := masterRepo.NewAdminRepository(db)
+	customerRepo := masterRepo.NewCustomerRepository(db)
+	instanceRepo := masterRepo.NewInstanceRepository(db)
+	subscriptionRepo := masterRepo.NewSubscriptionRepository(db)
+	planRepo := masterRepo.NewPlanRepository(db)
+	billingRepo := masterRepo.NewBillingRecordRepository(db)
 
 	// Initialize services
 	instanceProvisioner, err := platformsvc.NewInstanceProvisioner(db, instanceRepo, cfg)
@@ -29,8 +32,11 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		panic(fmt.Sprintf("failed to create instance provisioner: %v", err))
 	}
 
+	// Initialize token manager
+	tokenManager := auth.NewTokenManager(redisClient, cfg)
+
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(adminRepo, cfg)
+	authHandler := handlers.NewAuthHandler(adminRepo, cfg, tokenManager)
 	customerHandler := handlers.NewCustomerHandler(customerRepo, instanceRepo, cfg)
 	instanceHandler := handlers.NewInstanceHandler(instanceRepo, customerRepo, subscriptionRepo, instanceProvisioner, cfg)
 	subscriptionHandler := handlers.NewSubscriptionHandler(subscriptionRepo, planRepo, customerRepo, cfg)
@@ -53,6 +59,14 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			// Admin management
 			admin.GET("/me", authHandler.GetCurrentAdmin)
 			admin.PUT("/password", authHandler.ChangePassword)
+
+			// Token management (super admin only)
+			tokens := admin.Group("/tokens")
+			tokens.Use(middleware.RequireRole(masterModels.AdminRoleSuperAdmin))
+			{
+				tokens.POST("/revoke/user", authHandler.RevokeUserTokens)
+				tokens.POST("/revoke/token", authHandler.RevokeToken)
+			}
 
 			// Customer management
 			customers := admin.Group("/customers")

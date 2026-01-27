@@ -1,0 +1,55 @@
+Prompt 2.2.6: Add UI Components
+
+**Objective**: Create reusable UI components.
+
+**Instructions for AI Agent**:
+
+Create basic UI components in src/components/ui/:
+
+Button.astro:
+
+Accept props: variant ('primary' | 'secondary' | 'outline'), size ('sm' | 'md' | 'lg'), href (optional)
+Render as <button> or <a> based on href prop
+Include slot for content
+
+Variants:
+
+primary: primary color background, white text
+secondary: secondary color background, white text
+outline: border only, transparent background
+
+
+Sizes: appropriate padding for each size
+Hover and active states
+Disabled state
+
+
+Input.astro:
+
+Accept props: type, placeholder, name, value, required
+Styled text input
+Focus state with primary color border
+Error state (red border)
+Include label support
+
+
+Modal.astro (for future login/register):
+
+Overlay background
+Centered content area
+Close button
+Slot for content
+Styling: shadow, rounded corners, max width
+
+
+SearchBar.astro:
+
+Input field with search icon
+Submit button or enter key support
+Autocomplete dropdown area (empty for now)
+Expand on focus animation
+Clear button when text is entered
+
+
+
+DELIVERABLE: Reusable UI components with consistent styling.

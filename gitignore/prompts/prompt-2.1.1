@@ -1,0 +1,98 @@
+Prompt 2.1.1: Initialize Astro Project
+
+Objective: Set up a new Astro project with TypeScript support and configure the basic project structure.
+
+Instructions for AI Agent:
+
+Create a new Astro project with the following specifications:
+
+1. Initialize the project:
+   - Use Astro 4.x with TypeScript
+   - Include Tailwind CSS for styling
+   - Set up the project with SSR (Server-Side Rendering) capability for future dynamic routing
+
+2. Create the following folder structure:
+
+src/
+├── components/
+│   ├── layout/
+│   │   ├── Header.astro
+│   │   ├── Footer.astro
+│   │   └── Sidebar.astro
+│   ├── video/
+│   │   ├── VideoCard.astro
+│   │   ├── VideoGrid.astro
+│   │   └── VideoPlayer.astro
+│   ├── filters/
+│   │   ├── CategoryList.astro
+│   │   ├── TagFilter.astro
+│   │   └── SortOptions.astro
+│   └── ui/
+│       ├── Button.astro
+│       ├── Input.astro
+│       └── Pagination.astro
+├── layouts/
+│   ├── BaseLayout.astro
+│   └── VideoLayout.astro
+├── pages/
+│   ├── index.astro
+│   └── video/
+│       └── [id].astro
+├── lib/
+│   ├── mockData.ts
+│   └── types.ts
+├── styles/
+│   └── global.css
+└── config/
+    └── branding.ts
+
+3. Configure Tailwind CSS:
+   - Install and configure Tailwind CSS
+   - Set up a minimal, clean design system with the following defaults:
+     - Primary color: #2563eb (blue-600)
+     - Secondary color: #64748b (slate-500)
+     - Background: #ffffff
+     - Text: #1e293b (slate-800)
+   - These should be easily customizable via CSS variables
+
+4. Create a branding configuration file (src/config/branding.ts):
+   - This will eventually be populated from the instance database
+   - For now, use mock values:
+     - siteName: "VideoTube"
+     - logo: placeholder URL
+     - primaryColor, secondaryColor
+     - customCSS: empty string
+
+5. Set up environment variables:
+   - Create .env.example with:
+     - API_URL=http://localhost:8080/v1
+     - INSTANCE_ID=mock-instance-id
+
+6. Configure astro.config.mjs for SSR support
+
+# After completing setup, verify:
+npm run dev          # Development server starts without errors
+npm run build        # Production build succeeds
+npm run preview      # Preview build works
+npm run lint         # No linting errors
+npm run type-check   # TypeScript compiles without errors
+```
+
+**Test Files to Create:**
+```
+tests/
+├── unit/
+│   ├── lib/
+│   │   ├── mockData.test.ts
+│   │   └── utils.test.ts
+│   └── components/
+│       └── [component].test.ts
+├── integration/
+│   └── pages/
+│       ├── homepage.test.ts
+│       └── video-page.test.ts
+└── e2e/
+    └── user-flows.spec.ts
+
+
+DELIVERABLE: A fully initialized Astro project ready for component development.

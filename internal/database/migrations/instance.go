@@ -24,6 +24,7 @@ var InstanceMigrations = []func(*gorm.DB) error{
 	instanceMigrate013_createBrandingConfig,
 	instanceMigrate014_createPages,
 	instanceMigrate015_createSettings,
+	instanceMigrate016_addForeignKeys,
 }
 
 // instanceMigrate001_createUsers creates the users table
@@ -563,6 +564,297 @@ func instanceMigrate015_createSettings(db *gorm.DB) error {
 
 	// Add index
 	if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_settings_instance ON settings(instance_id);`).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// instanceMigrate016_addForeignKeys adds foreign key constraints to instance database tables
+func instanceMigrate016_addForeignKeys(db *gorm.DB) error {
+	// Add FK constraint for users.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE users 
+		DROP CONSTRAINT IF EXISTS fk_users_instance;
+		ALTER TABLE users 
+		ADD CONSTRAINT fk_users_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for videos.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE videos 
+		DROP CONSTRAINT IF EXISTS fk_videos_instance;
+		ALTER TABLE videos 
+		ADD CONSTRAINT fk_videos_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for videos.user_id -> users(id)
+	if err := db.Exec(`
+		ALTER TABLE videos 
+		DROP CONSTRAINT IF EXISTS fk_videos_user;
+		ALTER TABLE videos 
+		ADD CONSTRAINT fk_videos_user 
+		FOREIGN KEY (user_id) 
+		REFERENCES users(id) 
+		ON DELETE RESTRICT;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for videos.category_id -> categories(id)
+	if err := db.Exec(`
+		ALTER TABLE videos 
+		DROP CONSTRAINT IF EXISTS fk_videos_category;
+		ALTER TABLE videos 
+		ADD CONSTRAINT fk_videos_category 
+		FOREIGN KEY (category_id) 
+		REFERENCES categories(id) 
+		ON DELETE SET NULL;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for categories.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE categories 
+		DROP CONSTRAINT IF EXISTS fk_categories_instance;
+		ALTER TABLE categories 
+		ADD CONSTRAINT fk_categories_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for categories.parent_id -> categories(id)
+	if err := db.Exec(`
+		ALTER TABLE categories 
+		DROP CONSTRAINT IF EXISTS fk_categories_parent;
+		ALTER TABLE categories 
+		ADD CONSTRAINT fk_categories_parent 
+		FOREIGN KEY (parent_id) 
+		REFERENCES categories(id) 
+		ON DELETE SET NULL;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for tags.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE tags 
+		DROP CONSTRAINT IF EXISTS fk_tags_instance;
+		ALTER TABLE tags 
+		ADD CONSTRAINT fk_tags_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for comments.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE comments 
+		DROP CONSTRAINT IF EXISTS fk_comments_instance;
+		ALTER TABLE comments 
+		ADD CONSTRAINT fk_comments_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for comments.user_id -> users(id)
+	if err := db.Exec(`
+		ALTER TABLE comments 
+		DROP CONSTRAINT IF EXISTS fk_comments_user;
+		ALTER TABLE comments 
+		ADD CONSTRAINT fk_comments_user 
+		FOREIGN KEY (user_id) 
+		REFERENCES users(id) 
+		ON DELETE RESTRICT;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for comments.parent_id -> comments(id)
+	if err := db.Exec(`
+		ALTER TABLE comments 
+		DROP CONSTRAINT IF EXISTS fk_comments_parent;
+		ALTER TABLE comments 
+		ADD CONSTRAINT fk_comments_parent 
+		FOREIGN KEY (parent_id) 
+		REFERENCES comments(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for ratings.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE ratings 
+		DROP CONSTRAINT IF EXISTS fk_ratings_instance;
+		ALTER TABLE ratings 
+		ADD CONSTRAINT fk_ratings_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for ratings.user_id -> users(id)
+	if err := db.Exec(`
+		ALTER TABLE ratings 
+		DROP CONSTRAINT IF EXISTS fk_ratings_user;
+		ALTER TABLE ratings 
+		ADD CONSTRAINT fk_ratings_user 
+		FOREIGN KEY (user_id) 
+		REFERENCES users(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for favorites.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE favorites 
+		DROP CONSTRAINT IF EXISTS fk_favorites_instance;
+		ALTER TABLE favorites 
+		ADD CONSTRAINT fk_favorites_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for favorites.user_id -> users(id)
+	if err := db.Exec(`
+		ALTER TABLE favorites 
+		DROP CONSTRAINT IF EXISTS fk_favorites_user;
+		ALTER TABLE favorites 
+		ADD CONSTRAINT fk_favorites_user 
+		FOREIGN KEY (user_id) 
+		REFERENCES users(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for favorites.video_id -> videos(id)
+	if err := db.Exec(`
+		ALTER TABLE favorites 
+		DROP CONSTRAINT IF EXISTS fk_favorites_video;
+		ALTER TABLE favorites 
+		ADD CONSTRAINT fk_favorites_video 
+		FOREIGN KEY (video_id) 
+		REFERENCES videos(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for playlists.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE playlists 
+		DROP CONSTRAINT IF EXISTS fk_playlists_instance;
+		ALTER TABLE playlists 
+		ADD CONSTRAINT fk_playlists_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for playlists.user_id -> users(id)
+	if err := db.Exec(`
+		ALTER TABLE playlists 
+		DROP CONSTRAINT IF EXISTS fk_playlists_user;
+		ALTER TABLE playlists 
+		ADD CONSTRAINT fk_playlists_user 
+		FOREIGN KEY (user_id) 
+		REFERENCES users(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for video_views.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE video_views 
+		DROP CONSTRAINT IF EXISTS fk_video_views_instance;
+		ALTER TABLE video_views 
+		ADD CONSTRAINT fk_video_views_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for video_views.user_id -> users(id)
+	if err := db.Exec(`
+		ALTER TABLE video_views 
+		DROP CONSTRAINT IF EXISTS fk_video_views_user;
+		ALTER TABLE video_views 
+		ADD CONSTRAINT fk_video_views_user 
+		FOREIGN KEY (user_id) 
+		REFERENCES users(id) 
+		ON DELETE SET NULL;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for branding_config.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE branding_config 
+		DROP CONSTRAINT IF EXISTS fk_branding_config_instance;
+		ALTER TABLE branding_config 
+		ADD CONSTRAINT fk_branding_config_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for pages.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE pages 
+		DROP CONSTRAINT IF EXISTS fk_pages_instance;
+		ALTER TABLE pages 
+		ADD CONSTRAINT fk_pages_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for settings.instance_id -> instances(id)
+	if err := db.Exec(`
+		ALTER TABLE settings 
+		DROP CONSTRAINT IF EXISTS fk_settings_instance;
+		ALTER TABLE settings 
+		ADD CONSTRAINT fk_settings_instance 
+		FOREIGN KEY (instance_id) 
+		REFERENCES instances(id) 
+		ON DELETE CASCADE;
+	`).Error; err != nil {
 		return err
 	}
 

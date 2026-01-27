@@ -16,6 +16,7 @@ var MasterMigrations = []func(*gorm.DB) error{
 	migrate008_createLicenses,
 	migrate009_createAdminUsers,
 	migrate010_createPlatformSettings,
+	migrate011_addForeignKeys,
 }
 
 // migrate001_createCustomers creates the customers table
@@ -354,6 +355,89 @@ func migrate010_createPlatformSettings(db *gorm.DB) error {
 		);
 	`
 	if err := db.Exec(sql).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// migrate011_addForeignKeys adds foreign key constraints to master database tables
+func migrate011_addForeignKeys(db *gorm.DB) error {
+	// Add FK constraint for instances.customer_id -> customers(id)
+	if err := db.Exec(`
+		ALTER TABLE instances 
+		DROP CONSTRAINT IF EXISTS fk_instances_customer;
+		ALTER TABLE instances 
+		ADD CONSTRAINT fk_instances_customer 
+		FOREIGN KEY (customer_id) 
+		REFERENCES customers(id) 
+		ON DELETE RESTRICT;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for instances.plan_id -> subscription_plans(id)
+	if err := db.Exec(`
+		ALTER TABLE instances 
+		DROP CONSTRAINT IF EXISTS fk_instances_plan;
+		ALTER TABLE instances 
+		ADD CONSTRAINT fk_instances_plan 
+		FOREIGN KEY (plan_id) 
+		REFERENCES subscription_plans(id) 
+		ON DELETE SET NULL;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for subscriptions.customer_id -> customers(id)
+	if err := db.Exec(`
+		ALTER TABLE subscriptions 
+		DROP CONSTRAINT IF EXISTS fk_subscriptions_customer;
+		ALTER TABLE subscriptions 
+		ADD CONSTRAINT fk_subscriptions_customer 
+		FOREIGN KEY (customer_id) 
+		REFERENCES customers(id) 
+		ON DELETE RESTRICT;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for subscriptions.plan_id -> subscription_plans(id)
+	if err := db.Exec(`
+		ALTER TABLE subscriptions 
+		DROP CONSTRAINT IF EXISTS fk_subscriptions_plan;
+		ALTER TABLE subscriptions 
+		ADD CONSTRAINT fk_subscriptions_plan 
+		FOREIGN KEY (plan_id) 
+		REFERENCES subscription_plans(id) 
+		ON DELETE RESTRICT;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for billing_records.customer_id -> customers(id)
+	if err := db.Exec(`
+		ALTER TABLE billing_records 
+		DROP CONSTRAINT IF EXISTS fk_billing_records_customer;
+		ALTER TABLE billing_records 
+		ADD CONSTRAINT fk_billing_records_customer 
+		FOREIGN KEY (customer_id) 
+		REFERENCES customers(id) 
+		ON DELETE RESTRICT;
+	`).Error; err != nil {
+		return err
+	}
+
+	// Add FK constraint for billing_records.subscription_id -> subscriptions(id)
+	if err := db.Exec(`
+		ALTER TABLE billing_records 
+		DROP CONSTRAINT IF EXISTS fk_billing_records_subscription;
+		ALTER TABLE billing_records 
+		ADD CONSTRAINT fk_billing_records_subscription 
+		FOREIGN KEY (subscription_id) 
+		REFERENCES subscriptions(id) 
+		ON DELETE SET NULL;
+	`).Error; err != nil {
 		return err
 	}
 

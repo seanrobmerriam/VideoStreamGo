@@ -1,0 +1,53 @@
+Prompt 2.2.3: Create Filter Components
+Objective: Build filtering and sorting UI components.
+Instructions for AI Agent:
+
+Create filtering components:
+
+1. src/components/filters/CategoryList.astro:
+   - Accept props: categories (Category[]), activeCategory (string | undefined)
+   - Display vertical list of categories
+   - Each category:
+     - Name
+     - Video count (in lighter text)
+     - Active state styling (different background)
+   - Include "All Categories" option at top
+   - Styling:
+     - Each item: padding, hover state
+     - Active: primary color background, white text
+     - Hover: light background
+
+2. src/components/filters/TagFilter.astro:
+   - Accept props: tags (Tag[]), activeTags (string[])
+   - Display horizontal scrollable list of tag chips
+   - Each tag:
+     - Pill/chip shape
+     - Clickable
+     - Toggle active state (different color when selected)
+   - Styling:
+     - Chips with border
+     - Active: filled with primary color
+     - Inactive: border only
+     - Hover effect
+
+3. src/components/filters/SortOptions.astro:
+   - Accept props: currentSort (SortOption)
+   - Display dropdown or button group:
+     - Newest
+     - Oldest
+     - Most Viewed
+     - Highest Rated
+   - Show currently selected option
+   - Styling:
+     - Dropdown button with icon
+     - Light background
+     - Border
+
+4. Create a filter bar component that combines these:
+   - src/components/filters/FilterBar.astro
+   - Horizontal layout on desktop
+   - Stacks vertically on mobile
+   - Contains: TagFilter and SortOptions
+   - Sticky below header when scrolling
+
+DELIVERABLE: Complete filter components with intuitive UI.

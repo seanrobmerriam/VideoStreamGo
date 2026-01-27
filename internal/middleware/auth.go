@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -19,10 +20,24 @@ import (
 	"videostreamgo/internal/types"
 )
 
+// Security event types for logging
+const (
+	SecurityEventCrossServiceToken = "CROSS_SERVICE_TOKEN_ATTEMPT"
+	SecurityEventInvalidIssuer     = "INVALID_ISSUER"
+	SecurityEventTokenExpired      = "TOKEN_EXPIRED"
+	SecurityEventTokenRevoked      = "TOKEN_REVOKED"
+)
+
+// logSecurityEvent logs security-related events
+func logSecurityEvent(eventType, message, IPAddress string) {
+	log.Printf("[SECURITY] type=%s msg=%s ip=%s", eventType, message, IPAddress)
+}
+
 // AdminAuthMiddleware handles JWT authentication for platform admins
 func AdminAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 	repo := masterRepo.NewAdminRepository(db)
 	return func(c *gin.Context) {
+		IPAddress := c.ClientIP()
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
@@ -46,16 +61,44 @@ func AdminAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
+		// First, parse without verification to check issuer claim
+		token, _ := jwt.Parse(tokenString, nil)
+		if token != nil {
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if ok {
+				issuer, _ := claims["iss"].(string)
+				// Check for cross-service token attempt
+				if issuer != "" && issuer != config.ServiceIdentifierPlatform {
+					logSecurityEvent(
+						SecurityEventCrossServiceToken,
+						"Cross-service token attempt detected",
+						IPAddress,
+					)
+					c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
+						"INVALID_ISSUER",
+						"Token issued by incorrect service",
+						"Expected: "+config.ServiceIdentifierPlatform,
+					))
+					return
+				}
+			}
+		}
+
 		// Parse and validate JWT token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			// Validate signing method
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}
-			return []byte(cfg.App.JWTSecret), nil
+			return []byte(cfg.App.PlatformJWTSecret), nil
 		})
 
 		if err != nil {
+			logSecurityEvent(
+				SecurityEventTokenExpired,
+				"Invalid or expired token: "+err.Error(),
+				IPAddress,
+			)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
 				"INVALID_TOKEN",
 				"Invalid or expired token",
@@ -69,6 +112,22 @@ func AdminAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
 				"INVALID_CLAIMS",
 				"Invalid token claims",
+				"",
+			))
+			return
+		}
+
+		// Validate issuer claim
+		issuer, _ := claims["iss"].(string)
+		if issuer != config.ServiceIdentifierPlatform {
+			logSecurityEvent(
+				SecurityEventInvalidIssuer,
+				"Token with invalid issuer: "+issuer,
+				IPAddress,
+			)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
+				"INVALID_ISSUER",
+				"Token issuer is not valid for this service",
 				"",
 			))
 			return
@@ -169,23 +228,31 @@ func RequireRole(allowedRoles ...master.AdminRole) gin.HandlerFunc {
 }
 
 // GenerateAdminToken generates a JWT token for an admin user
-func GenerateAdminToken(admin *master.AdminUser, cfg *config.Config) (string, error) {
+func GenerateAdminToken(admin *master.AdminUser, cfg *config.Config) (string, string, error) {
+	jti := uuid.New().String()
+	sessionID := uuid.New().String()
+
 	claims := jwt.MapClaims{
 		"admin_id": admin.ID.String(),
 		"email":    admin.Email,
 		"role":     string(admin.Role),
+		"iss":      config.ServiceIdentifierPlatform,
+		"jti":      jti,
+		"sid":      sessionID,
 		"exp":      time.Now().Add(24 * time.Hour).Unix(),
 		"iat":      time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(cfg.App.JWTSecret))
+	tokenString, err := token.SignedString([]byte(cfg.App.PlatformJWTSecret))
+	return tokenString, jti, err
 }
 
 // InstanceAuthMiddleware handles JWT authentication for instance users
 func InstanceAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 	repo := instanceRepo.NewUserRepository(db)
 	return func(c *gin.Context) {
+		IPAddress := c.ClientIP()
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
@@ -208,14 +275,42 @@ func InstanceAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
+		// First, parse without verification to check issuer claim
+		token, _ := jwt.Parse(tokenString, nil)
+		if token != nil {
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if ok {
+				issuer, _ := claims["iss"].(string)
+				// Check for cross-service token attempt
+				if issuer != "" && issuer != config.ServiceIdentifierInstance {
+					logSecurityEvent(
+						SecurityEventCrossServiceToken,
+						"Cross-service token attempt detected",
+						IPAddress,
+					)
+					c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
+						"INVALID_ISSUER",
+						"Token issued by incorrect service",
+						"Expected: "+config.ServiceIdentifierInstance,
+					))
+					return
+				}
+			}
+		}
+
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}
-			return []byte(cfg.App.JWTSecret), nil
+			return []byte(cfg.App.InstanceJWTSecret), nil
 		})
 
 		if err != nil {
+			logSecurityEvent(
+				SecurityEventTokenExpired,
+				"Invalid or expired token: "+err.Error(),
+				IPAddress,
+			)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
 				"INVALID_TOKEN",
 				"Invalid or expired token",
@@ -229,6 +324,22 @@ func InstanceAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
 				"INVALID_CLAIMS",
 				"Invalid token claims",
+				"",
+			))
+			return
+		}
+
+		// Validate issuer claim
+		issuer, _ := claims["iss"].(string)
+		if issuer != config.ServiceIdentifierInstance {
+			logSecurityEvent(
+				SecurityEventInvalidIssuer,
+				"Token with invalid issuer: "+issuer,
+				IPAddress,
+			)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, types.ErrorResponse(
+				"INVALID_ISSUER",
+				"Token issuer is not valid for this service",
 				"",
 			))
 			return
@@ -304,17 +415,24 @@ func InstanceAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 }
 
 // GenerateUserToken generates a JWT token for an instance user
-func GenerateUserToken(user *instance.User, instanceID uuid.UUID, cfg *config.Config) (string, error) {
+func GenerateUserToken(user *instance.User, instanceID uuid.UUID, cfg *config.Config) (string, string, error) {
+	jti := uuid.New().String()
+	sessionID := uuid.New().String()
+
 	claims := jwt.MapClaims{
 		"user_id":     user.ID.String(),
 		"instance_id": instanceID.String(),
 		"username":    user.Username,
 		"email":       user.Email,
 		"role":        string(user.Role),
+		"iss":         config.ServiceIdentifierInstance,
+		"jti":         jti,
+		"sid":         sessionID,
 		"exp":         time.Now().Add(7 * 24 * time.Hour).Unix(),
 		"iat":         time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(cfg.App.JWTSecret))
+	tokenString, err := token.SignedString([]byte(cfg.App.InstanceJWTSecret))
+	return tokenString, jti, err
 }

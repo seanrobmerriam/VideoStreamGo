@@ -1,0 +1,76 @@
+Prompt 2.2.1: Create Base Layout
+Objective: Build the foundational layout components.
+Instructions for AI Agent:
+
+Create the base layout components with a clean, minimal design:
+
+1. src/layouts/BaseLayout.astro:
+   - Accept props: title (string), description (string)
+   - Include HTML head with meta tags
+   - Include global CSS
+   - Load branding config and apply CSS variables for colors
+   - Include Header and Footer components
+   - Provide a slot for page content
+   - Structure:
+
+   <html>
+   <head>
+     <title>{title}</title>
+     <meta description={description} />
+     <!-- Apply branding colors as CSS variables -->
+   </head>
+   <body>
+     <Header />
+     <main>
+       <slot />
+     </main>
+     <Footer />
+   </body>
+ </html>
+
+ 2. src/components/layout/Header.astro:
+   - Logo (left side) - use branding config
+   - Site name (next to logo) - use branding config
+   - Search bar (center) - basic input, non-functional for now
+   - User menu (right side) - Login/Register buttons for now
+   - Minimal styling with Tailwind
+   - Sticky header that stays at top on scroll
+   - Height: ~64px
+
+3. src/components/layout/Footer.astro:
+   - Simple footer with:
+     - Copyright notice
+     - Links: About, Terms, Privacy, Contact
+     - Social media icons (placeholder)
+   - Background: light gray
+   - Padding: 2rem vertical
+
+4. src/components/layout/Sidebar.astro:
+   - Accept props: categories (Category[])
+   - Display list of categories
+   - Each category is a clickable link (use # for now)
+   - Show video count next to each category
+   - Styling:
+     - Fixed width: 240px
+     - Light background
+     - Padding: 1rem
+     - Rounded corners for active/hover states
+
+Design principles:
+- Clean and minimal (like early YouTube)
+- Lots of white space
+- Clear typography hierarchy
+- Subtle shadows and borders
+- Responsive (mobile-first)
+
+// Example: VideoCard.test.ts
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/astro';
+import VideoCard from './VideoCard.astro';
+
+
+
+
+
+
+DELIVERABLE: Complete layout components with minimal, professional styling.

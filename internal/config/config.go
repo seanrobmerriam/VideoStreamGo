@@ -1,12 +1,24 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
+)
+
+// Minimum JWT secret length requirement (64 characters)
+const MinJWTSecretLength = 64
+
+// Service identifiers for JWT issuer claims
+const (
+	ServiceIdentifierPlatform = "platform-api"
+	ServiceIdentifierInstance = "instance-api"
 )
 
 // Config holds all configuration for the application
@@ -39,11 +51,13 @@ type Config struct {
 
 	// Application Configuration
 	App struct {
-		Environment   string
-		Debug         bool
-		Port          int
-		JWTSecret     string
-		EncryptionKey string
+		Environment       string
+		Debug             bool
+		Port              int
+		PlatformJWTSecret string
+		InstanceJWTSecret string
+		EncryptionKey     string
+		ServiceIdentifier string
 	}
 
 	// Redis Configuration
@@ -57,12 +71,15 @@ type Config struct {
 
 	// S3 Configuration
 	S3 struct {
-		Endpoint  string
-		AccessKey string
-		SecretKey string
-		Bucket    string
-		Region    string
-		UseSSL    bool
+		Endpoint     string
+		AccessKey    string
+		SecretKey    string
+		Bucket       string
+		BucketPrefix string
+		Region       string
+		UseSSL       bool
+		MaxRetries   int
+		ChunkSizeMB  int
 	}
 
 	// Logging Configuration
@@ -112,7 +129,32 @@ func Load() (*Config, error) {
 	cfg.App.Environment = getEnv("APP_ENV", "development")
 	cfg.App.Debug = getEnvBool("APP_DEBUG", true)
 	cfg.App.Port = getEnvInt("APP_PORT", 8080)
-	cfg.App.JWTSecret = getEnv("JWT_SECRET", "your-jwt-secret-key")
+	cfg.App.ServiceIdentifier = getEnv("SERVICE_IDENTIFIER", ServiceIdentifierPlatform)
+
+	// Load and validate JWT secrets
+	platformSecret := getEnv("PLATFORM_JWT_SECRET", "")
+	instanceSecret := getEnv("INSTANCE_JWT_SECRET", "")
+
+	// Generate secure random secrets if not provided
+	if platformSecret == "" {
+		platformSecret = generateSecureSecret()
+		log.Printf("WARNING: PLATFORM_JWT_SECRET not set, generated secure random secret")
+	}
+	if instanceSecret == "" {
+		instanceSecret = generateSecureSecret()
+		log.Printf("WARNING: INSTANCE_JWT_SECRET not set, generated secure random secret")
+	}
+
+	// Validate secret lengths
+	if err := validateJWTSecret(platformSecret); err != nil {
+		return nil, fmt.Errorf("invalid PLATFORM_JWT_SECRET: %w", err)
+	}
+	if err := validateJWTSecret(instanceSecret); err != nil {
+		return nil, fmt.Errorf("invalid INSTANCE_JWT_SECRET: %w", err)
+	}
+
+	cfg.App.PlatformJWTSecret = platformSecret
+	cfg.App.InstanceJWTSecret = instanceSecret
 	cfg.App.EncryptionKey = getEnv("ENCRYPTION_KEY", "your-32-byte-encryption-key")
 
 	// Redis Configuration
@@ -127,8 +169,11 @@ func Load() (*Config, error) {
 	cfg.S3.AccessKey = getEnv("S3_ACCESS_KEY", "minioadmin")
 	cfg.S3.SecretKey = getEnv("S3_SECRET_KEY", "minioadmin")
 	cfg.S3.Bucket = getEnv("S3_BUCKET", "videostreamgo")
+	cfg.S3.BucketPrefix = getEnv("S3_BUCKET_PREFIX", "")
 	cfg.S3.Region = getEnv("S3_REGION", "us-east-1")
 	cfg.S3.UseSSL = getEnvBool("S3_USE_SSL", false)
+	cfg.S3.MaxRetries = getEnvInt("S3_MAX_RETRIES", 3)
+	cfg.S3.ChunkSizeMB = getEnvInt("S3_CHUNK_SIZE_MB", 10)
 
 	// Logging Configuration
 	cfg.Logging.Level = getEnv("LOG_LEVEL", "debug")
@@ -194,4 +239,47 @@ func getEnvBool(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+// generateSecureSecret generates a cryptographically random secret
+func generateSecureSecret() string {
+	bytes := make([]byte, 64) // 64 bytes = 128 hex characters
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to time-based if crypto random fails
+		return hex.EncodeToString([]byte(time.Now().String()))
+	}
+	return hex.EncodeToString(bytes)
+}
+
+// validateJWTSecret validates that a JWT secret meets minimum requirements
+func validateJWTSecret(secret string) error {
+	if len(secret) < MinJWTSecretLength {
+		return fmt.Errorf("secret must be at least %d characters, got %d", MinJWTSecretLength, len(secret))
+	}
+	return nil
+}
+
+// GetJWTSecret returns the appropriate JWT secret based on service identifier
+func (c *Config) GetJWTSecret() string {
+	if c.App.ServiceIdentifier == ServiceIdentifierInstance {
+		return c.App.InstanceJWTSecret
+	}
+	return c.App.PlatformJWTSecret
+}
+
+// GetJWTSecretForIssuer returns the JWT secret for a specific issuer
+func (c *Config) GetJWTSecretForIssuer(issuer string) (string, error) {
+	switch issuer {
+	case ServiceIdentifierPlatform:
+		return c.App.PlatformJWTSecret, nil
+	case ServiceIdentifierInstance:
+		return c.App.InstanceJWTSecret, nil
+	default:
+		return "", fmt.Errorf("unknown issuer: %s", issuer)
+	}
+}
+
+// IsValidIssuer checks if the given issuer is valid
+func (c *Config) IsValidIssuer(issuer string) bool {
+	return issuer == ServiceIdentifierPlatform || issuer == ServiceIdentifierInstance
 }

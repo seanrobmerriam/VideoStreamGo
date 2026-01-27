@@ -121,6 +121,9 @@ type AdminClaims struct {
 	AdminID uuid.UUID `json:"admin_id"`
 	Email   string    `json:"email"`
 	Role    string    `json:"role"`
+	Iss     string    `json:"iss"`
+	JTI     string    `json:"jti"`
+	SID     string    `json:"sid"`
 }
 
 // UserClaims represents JWT claims for instance users
@@ -130,6 +133,9 @@ type UserClaims struct {
 	Username   string    `json:"username"`
 	Email      string    `json:"email"`
 	Role       string    `json:"role"`
+	Iss        string    `json:"iss"`
+	JTI        string    `json:"jti"`
+	SID        string    `json:"sid"`
 }
 
 // AuditLog represents an audit log entry

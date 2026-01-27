@@ -1,0 +1,126 @@
+Prompt 2.2.5: Build Video Player Page
+
+**Objective**: Create the video player page with comments and interactions.
+
+**Instructions for AI Agent**:
+
+Create the video player page in src/pages/video/[id].astro:
+
+1. Get video ID from URL params
+2. Load video data from mockData.getVideoById(id)
+3. Load comments from mockData.getCommentsByVideoId(id)
+4. Page structure:
+
+<BaseLayout title={video.title}>
+     <div class="video-page">
+       
+       <!-- Video Player Section -->
+       <section class="video-player-section">
+         <VideoPlayer video={video} />
+         
+         <!-- Video Info -->
+         <div class="video-info">
+           <h1 class="video-title">{video.title}</h1>
+           
+           <div class="video-meta">
+             <div class="uploader-info">
+               <img src={video.uploader.avatarUrl} class="avatar" />
+               <span>{video.uploader.username}</span>
+             </div>
+             
+             <div class="video-stats">
+               <span>{video.viewCount} views</span>
+               <span>{formatDate(video.uploadedAt)}</span>
+             </div>
+           </div>
+
+           <!-- Action Buttons -->
+           <div class="action-buttons">
+             <button class="btn-like">
+               👍 {video.rating.likes}
+             </button>
+             <button class="btn-dislike">
+               👎 {video.rating.dislikes}
+             </button>
+             <button class="btn-favorite">
+               ⭐ Add to Favorites
+             </button>
+           </div>
+
+           <!-- Description -->
+           <div class="description">
+             <p>{video.description}</p>
+           </div>
+
+           <!-- Tags -->
+           <div class="tags">
+             {video.tags.map(tag => (
+               <a href="#" class="tag">{tag.name}</a>
+             ))}
+           </div>
+         </div>
+       </section>
+
+       <!-- Comments Section -->
+       <section class="comments-section">
+         <h2>Comments</h2>
+         
+         <!-- Comment Form (logged in users only - show login prompt for now) -->
+         <div class="comment-form">
+           <p>Please log in to comment</p>
+         </div>
+
+         <!-- Comments List -->
+         <div class="comments-list">
+           {comments.map(comment => (
+             <CommentCard comment={comment} />
+           ))}
+         </div>
+       </section>
+
+       <!-- Related Videos Sidebar (Optional) -->
+       <aside class="related-videos">
+         <h3>Related Videos</h3>
+         <!-- Show 5-10 related videos (same category or tags) -->
+       </aside>
+
+     </div>
+   </BaseLayout>
+
+   Create CommentCard component (src/components/video/CommentCard.astro):
+
+Display comment with:
+
+User avatar
+Username
+Comment text
+Timestamp
+Reply button (non-functional for now)
+
+
+Handle nested replies (indent and recursively render)
+Styling: Clean, readable, clear hierarchy
+
+
+Layout:
+
+Max width: 1400px
+Two-column on desktop:
+
+Main content (video + comments): 70%
+Related videos sidebar: 30%
+
+
+Single column on mobile
+
+
+Styling:
+
+Generous spacing
+Clear sections
+Action buttons with icons
+Responsive video player that maintains aspect ratio
+
+
+
+DELIVERABLE: Complete video player page with all sections, responsive layout, and mock interactions.

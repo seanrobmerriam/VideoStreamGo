@@ -1,0 +1,98 @@
+Prompt 2.1.2: Create Type Definitions
+Objective: Define TypeScript interfaces for all data structures.
+Instructions for AI Agent:
+
+Create comprehensive TypeScript type definitions in src/lib/types.ts:
+
+1. Define the following interfaces:
+
+// Instance/Branding Types
+export interface InstanceConfig {
+  siteName: string;
+  logoUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  customCSS?: string;
+}
+
+// Video Types
+export interface Video {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+  duration: number; // in seconds
+  viewCount: number;
+  uploadedAt: string;
+  uploader: {
+    id: string;
+    username: string;
+    avatarUrl?: string;
+  };
+  category: Category;
+  tags: Tag[];
+  rating: {
+    likes: number;
+    dislikes: number;
+  };
+}
+
+// Category Types
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  videoCount?: number;
+}
+
+// Tag Types
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+// Comment Types
+export interface Comment {
+  id: string;
+  videoId: string;
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+  replies?: Comment[];
+}
+
+// User Types
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  avatarUrl?: string;
+  isPremium: boolean;
+  createdAt: string;
+}
+
+// Pagination Types
+export interface PaginationData {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+// Filter/Sort Types
+export type SortOption = 'newest' | 'oldest' | 'most-viewed' | 'highest-rated';
+
+export interface VideoFilters {
+  categoryId?: string;
+  tagIds?: string[];
+  sortBy: SortOption;
+  page: number;
+  limit: number;
+}
+
+DELIVERABLE: Complete type definitions file with all necessary interfaces and types.

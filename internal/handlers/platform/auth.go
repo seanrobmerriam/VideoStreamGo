@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
+	"videostreamgo/internal/auth"
 	"videostreamgo/internal/config"
 	"videostreamgo/internal/middleware"
 	"videostreamgo/internal/models/master"
@@ -16,15 +18,17 @@ import (
 
 // AuthHandler handles authentication endpoints
 type AuthHandler struct {
-	adminRepo *masterRepo.AdminRepository
-	cfg       *config.Config
+	adminRepo    *masterRepo.AdminRepository
+	cfg          *config.Config
+	tokenManager *auth.TokenManager
 }
 
 // NewAuthHandler creates a new AuthHandler
-func NewAuthHandler(adminRepo *masterRepo.AdminRepository, cfg *config.Config) *AuthHandler {
+func NewAuthHandler(adminRepo *masterRepo.AdminRepository, cfg *config.Config, tokenManager *auth.TokenManager) *AuthHandler {
 	return &AuthHandler{
-		adminRepo: adminRepo,
-		cfg:       cfg,
+		adminRepo:    adminRepo,
+		cfg:          cfg,
+		tokenManager: tokenManager,
 	}
 }
 
@@ -56,10 +60,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := middleware.GenerateAdminToken(admin, h.cfg)
+	token, jti, err := middleware.GenerateAdminToken(admin, h.cfg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse("TOKEN_ERROR", "Failed to generate token", err.Error()))
 		return
+	}
+
+	// Store token for revocation tracking if token manager is available
+	if h.tokenManager != nil {
+		_ = h.tokenManager.RevokeToken(c.Request.Context(), jti, "login")
 	}
 
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
@@ -108,7 +117,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	token, err := middleware.GenerateAdminToken(admin, h.cfg)
+	token, _, err := middleware.GenerateAdminToken(admin, h.cfg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse("TOKEN_ERROR", "Failed to generate token", err.Error()))
 		return
@@ -138,7 +147,7 @@ func (h *AuthHandler) GetCurrentAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(ToAdminUserResponse(adminUser), ""))
 }
 
-// ChangePassword handles password change
+// ChangePassword handles password change with automatic token rotation
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	var req struct {
 		CurrentPassword string `json:"current_password" binding:"required"`
@@ -179,7 +188,87 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(nil, "Password updated successfully"))
+	// Record token rotation to invalidate all existing tokens
+	if h.tokenManager != nil {
+		if err := h.tokenManager.RecordTokenRotation(c.Request.Context(), adminUser.ID); err != nil {
+			// Log but don't fail the request
+			c.JSON(http.StatusOK, types.SuccessResponse(nil, "Password updated, but token revocation may be delayed"))
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(nil, "Password updated successfully - all existing tokens have been revoked"))
+}
+
+// RevokeUserTokens handles admin-initiated token revocation for a user (admin only)
+func (h *AuthHandler) RevokeUserTokens(c *gin.Context) {
+	var req struct {
+		UserID string `json:"user_id" binding:"required"`
+		Reason string `json:"reason"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse("VALIDATION_ERROR", "Invalid request", err.Error()))
+		return
+	}
+
+	userID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse("INVALID_USER_ID", "Invalid user ID format", err.Error()))
+		return
+	}
+
+	reason := req.Reason
+	if reason == "" {
+		reason = "admin_revocation"
+	}
+
+	if h.tokenManager == nil {
+		c.JSON(http.StatusServiceUnavailable, types.ErrorResponse("SERVICE_UNAVAILABLE", "Token manager not available", ""))
+		return
+	}
+
+	if err := h.tokenManager.RevokeAllUserTokens(c.Request.Context(), userID, reason); err != nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("REVOCATION_FAILED", "Failed to revoke tokens", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+		"user_id": userID.String(),
+		"message": "All tokens revoked for user",
+	}, "Tokens revoked successfully"))
+}
+
+// RevokeToken handles revocation of a specific token by JTI
+func (h *AuthHandler) RevokeToken(c *gin.Context) {
+	var req struct {
+		JTI    string `json:"jti" binding:"required"`
+		Reason string `json:"reason"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse("VALIDATION_ERROR", "Invalid request", err.Error()))
+		return
+	}
+
+	reason := req.Reason
+	if reason == "" {
+		reason = "manual_revocation"
+	}
+
+	if h.tokenManager == nil {
+		c.JSON(http.StatusServiceUnavailable, types.ErrorResponse("SERVICE_UNAVAILABLE", "Token manager not available", ""))
+		return
+	}
+
+	if err := h.tokenManager.RevokeToken(c.Request.Context(), req.JTI, reason); err != nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("REVOCATION_FAILED", "Failed to revoke token", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+		"jti": req.JTI,
+	}, "Token revoked successfully"))
 }
 
 // ToAdminUserResponse converts AdminUser to response format

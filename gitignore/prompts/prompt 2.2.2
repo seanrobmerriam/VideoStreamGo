@@ -1,0 +1,59 @@
+Prompt 2.2.2: Create Video Components
+Objective: Build reusable video display components.
+Instructions for AI Agent:
+
+Create video-related components:
+
+1. src/components/video/VideoCard.astro:
+   - Accept props: video (Video type)
+   - Display:
+     - Thumbnail image (16:9 aspect ratio)
+     - Duration badge (bottom-right of thumbnail)
+     - Title (max 2 lines, truncate with ellipsis)
+     - Uploader name with avatar
+     - View count and upload date
+     - Rating indicator (likes/dislikes or star rating)
+   - Styling:
+     - Card with subtle shadow
+     - Hover effect: lift slightly, increase shadow
+     - Cursor pointer
+     - Rounded corners
+   - Link to /video/[id] page
+   - Mobile responsive
+
+2. src/components/video/VideoGrid.astro:
+   - Accept props: videos (Video[])
+   - Display videos in responsive grid:
+     - Mobile: 1 column
+     - Tablet: 2-3 columns
+     - Desktop: 4-5 columns
+   - Gap between cards: 1.5rem
+   - Use VideoCard component for each video
+
+3. src/components/video/VideoPlayer.astro:
+   - Accept props: video (Video type)
+   - Display:
+     - HTML5 video player or placeholder for now
+     - Video controls (play, pause, volume, fullscreen, progress bar)
+     - For mockup: just show poster image with play button overlay
+   - Aspect ratio: 16:9
+   - Width: 100% of container
+   - Max width: 1280px
+   - Add note: "Video player will be functional when connected to backend"
+
+4. src/components/ui/Pagination.astro:
+   - Accept props: pagination (PaginationData type)
+   - Display:
+     - Previous button
+     - Page numbers (show current, 2 before, 2 after)
+     - Next button
+     - Total results count
+   - Styling:
+     - Centered
+     - Current page highlighted
+     - Disabled state for prev/next when applicable
+   - For mockup: buttons use # links
+
+   
+
+DELIVERABLE: Complete video components with clean, functional UI.

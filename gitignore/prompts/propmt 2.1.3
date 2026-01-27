@@ -1,0 +1,49 @@
+
+Prompt 2.1.3: Create Mock Data
+Objective: Generate realistic mock data for development.
+Instructions for AI Agent:
+
+Create a mock data file in src/lib/mockData.ts with realistic sample data:
+
+1. Create mock categories (at least 8):
+   - Examples: Gaming, Education, Entertainment, Music, Sports, Technology, Cooking, Travel
+
+2. Create mock tags (at least 20):
+   - Examples: tutorial, review, gameplay, funny, vlog, etc.
+
+3. Create mock videos (at least 50):
+   - Each video should have:
+     - Unique ID (use UUID format strings)
+     - Realistic title
+     - Description (2-3 sentences)
+     - Thumbnail URL (use placeholder image service like https://picsum.photos/320/180)
+     - Duration (between 60-3600 seconds)
+     - Random view count (100-100000)
+     - Upload date (within last 6 months)
+     - Random uploader
+     - Random category
+     - 2-5 random tags
+     - Random like/dislike ratio
+
+4. Create mock users (at least 10):
+   - Mix of regular and premium users
+   - Use realistic usernames
+
+5. Create mock comments (at least 30):
+   - Distribute across videos
+   - Some with replies (nested comments)
+
+6. Export helper functions:
+   - getVideos(filters: VideoFilters): { videos: Video[], pagination: PaginationData }
+   - getVideoById(id: string): Video | undefined
+   - getCategories(): Category[]
+   - getTags(): Tag[]
+   - getCommentsByVideoId(videoId: string): Comment[]
+
+7. Implement basic filtering and sorting logic in getVideos():
+   - Filter by category if provided
+   - Filter by tags if provided
+   - Sort according to sortBy parameter
+   - Paginate results
+
+DELIVERABLE: Complete mock data file with realistic data and helper functions.
