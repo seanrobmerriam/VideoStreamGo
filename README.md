@@ -1134,4 +1134,4 @@ API endpoints are protected by rate limiting to prevent abuse:
 
 ## License
 
-MIT License - see LICENSE file for details.
+See LICENSE.md
