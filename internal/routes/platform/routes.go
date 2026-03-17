@@ -9,19 +9,20 @@ import (
 	"videostreamgo/internal/config"
 	handlers "videostreamgo/internal/handlers/platform"
 	"videostreamgo/internal/middleware"
-	"videostreamgo/internal/repository/master"
+	masterModels "videostreamgo/internal/models/master"
+	masterRepo "videostreamgo/internal/repository/master"
 	platformsvc "videostreamgo/internal/services/platform"
 )
 
 // SetupRoutes configures all platform API routes
 func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Initialize repositories
-	adminRepo := master.NewAdminRepository(db)
-	customerRepo := master.NewCustomerRepository(db)
-	instanceRepo := master.NewInstanceRepository(db)
-	subscriptionRepo := master.NewSubscriptionRepository(db)
-	planRepo := master.NewPlanRepository(db)
-	billingRepo := master.NewBillingRecordRepository(db)
+	adminRepo := masterRepo.NewAdminRepository(db)
+	customerRepo := masterRepo.NewCustomerRepository(db)
+	instanceRepo := masterRepo.NewInstanceRepository(db)
+	subscriptionRepo := masterRepo.NewSubscriptionRepository(db)
+	planRepo := masterRepo.NewPlanRepository(db)
+	billingRepo := masterRepo.NewBillingRecordRepository(db)
 
 	// Initialize services
 	instanceProvisioner, err := platformsvc.NewInstanceProvisioner(db, instanceRepo, cfg)
@@ -101,8 +102,9 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 				plans.DELETE("/:id", subscriptionHandler.DeletePlan)
 			}
 
-			// Billing management
+			// Billing management - requires super_admin role
 			billing := admin.Group("/billing")
+			billing.Use(middleware.RequireRole(masterModels.AdminRoleSuperAdmin))
 			{
 				// Billing records
 				billing.GET("/records", billingHandler.ListRecords)
@@ -122,8 +124,9 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 				billing.GET("/usage/:instance_id", billingHandler.GetUsageMetrics)
 			}
 
-			// Analytics
+			// Analytics - requires super_admin role (shares billing handlers)
 			analytics := admin.Group("/analytics")
+			analytics.Use(middleware.RequireRole(masterModels.AdminRoleSuperAdmin))
 			{
 				analytics.GET("/overview", billingHandler.GetOverview)
 				analytics.GET("/revenue", billingHandler.GetRevenueReport)

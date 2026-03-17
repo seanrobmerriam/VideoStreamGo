@@ -1,3 +1,180 @@
-gitignore
+# =============================================================================
+# VideoStreamGo - Comprehensive .gitignore
+# =============================================================================
+# This file excludes files that should not be committed to version control
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# Go Build Artifacts
+# -----------------------------------------------------------------------------
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+coverage.out
+
+# Output directories
+/bin/
+/build/
+/dist/
+
+# Go workspace file
+go.work
+
+# Vendor directory (if using vendoring)
+/vendor/
+
+# Cgo binaries
+_cgo_*
+_obj/
+
+# -----------------------------------------------------------------------------
+# Node.js / Astro / React Build Artifacts
+# -----------------------------------------------------------------------------
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+.astro/
+dist/
+.next/
+out/
+
+# Environment files - keep .env.example but ignore .env
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.npm
+.eslintcache
+.pnpm-store
+
+# -----------------------------------------------------------------------------
+# IDE & Editor Files
+# -----------------------------------------------------------------------------
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains IDEs (IntelliJ, GoLand, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.tmlanguage.cache
+*.stTheme.cache
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+nbproject/
+build/
+nbbuild/
+
+# -----------------------------------------------------------------------------
+# Operating System Files
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+AppleDouble
+.LSOverride
+Icon
+._*
+
+# Thumbnails
+Thumbs.db
+ehthumbs.db
+.DS_Store
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+*.stackdump
+desktop.ini
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# -----------------------------------------------------------------------------
+# Docker & Kubernetes
+# -----------------------------------------------------------------------------
+# Docker compose override (local settings)
+docker-compose.override.yml
+
+# Container logs
+*.log
+
+# -----------------------------------------------------------------------------
+# Testing
+# -----------------------------------------------------------------------------
+# Go test coverage
+*.out
+
+# Node test coverage
+coverage/
+.nyc_output/
+
+# -----------------------------------------------------------------------------
+# Temporary Files
+# -----------------------------------------------------------------------------
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Debug files
+*.pdb
+
+# -----------------------------------------------------------------------------
+# Miscellaneous
+# -----------------------------------------------------------------------------
+# Terraform (if used)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Secrets (should not be committed)
+*.pem
+*.key
+*.crt
+
+# -----------------------------------------------------------------------------
+# Keep these files (negative patterns)
+# -----------------------------------------------------------------------------
+# Keep .env.example for documentation
+!.env.example
+
+# Keep Dockerfile and docker-compose files
+!docker-compose.yml
+!Dockerfile*
+
+# Keep Helm chart files
+!helm/

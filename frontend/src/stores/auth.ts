@@ -1,6 +1,6 @@
 import { atom, map } from 'nanostores';
 import type { User } from '../lib/auth';
-import { tokenManager, isAuthenticated as checkAuth } from '../lib/auth';
+import { tokenManager, platformAuth } from '../lib/auth';
 
 // Auth State
 export interface AuthState {
@@ -49,14 +49,26 @@ export const setError = (error: string | null): void => {
   $auth.setKey('error', error);
 };
 
-export const initializeAuth = (): void => {
-  const token = tokenManager.getToken();
-  const user = tokenManager.getStoredUser();
+/**
+ * Initialize authentication state
+ * 
+ * With httpOnly cookies, we cannot read the token from JavaScript.
+ * Instead, we call the /me endpoint to verify authentication.
+ * The browser automatically sends the httpOnly cookie with the request.
+ */
+export const initializeAuth = async (): Promise<void> => {
+  setLoading(true);
   
-  if (token && user) {
+  try {
+    // Try to get current user - the server will validate the httpOnly cookie
+    const user = await platformAuth.getCurrentUser();
     setUser(user);
-  } else {
-    $auth.setKey('isLoading', false);
+  } catch (error) {
+    // Not authenticated or token expired - clear state
+    tokenManager.removeStoredUser();
+    setUser(null);
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -65,9 +77,10 @@ export const login = async (email: string, password: string): Promise<void> => {
   setError(null);
   
   try {
-    const { platformAuth } = await import('../lib/auth');
+    // Login via API - server sets httpOnly cookie in response
     const response = await platformAuth.login({ email, password });
-    tokenManager.setToken(response.token);
+    
+    // Store user for UI display (not the token - that's in httpOnly cookie)
     tokenManager.setStoredUser(response.user);
     setUser(response.user);
   } catch (error) {
@@ -89,9 +102,10 @@ export const register = async (data: {
   setError(null);
   
   try {
-    const { platformAuth } = await import('../lib/auth');
+    // Register via API - server sets httpOnly cookie in response
     const response = await platformAuth.register(data);
-    tokenManager.setToken(response.token);
+    
+    // Store user for UI display (not the token - that's in httpOnly cookie)
     tokenManager.setStoredUser(response.user);
     setUser(response.user);
   } catch (error) {
@@ -107,11 +121,12 @@ export const logout = async (): Promise<void> => {
   setLoading(true);
   
   try {
-    const { platformAuth } = await import('../lib/auth');
+    // Call logout API - server should invalidate the httpOnly cookie
     await platformAuth.logout();
   } catch {
     // Continue with logout even if API call fails
   } finally {
+    // Clear local user state
     tokenManager.clearAll();
     setUser(null);
     setLoading(false);

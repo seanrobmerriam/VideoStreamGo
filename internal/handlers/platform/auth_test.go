@@ -26,14 +26,16 @@ type MockAdminRepository struct {
 func setupTestConfig() *config.Config {
 	return &config.Config{
 		App: struct {
-			Environment   string
-			Debug         bool
-			Port          int
-			JWTSecret     string
-			EncryptionKey string
+			Environment    string
+			Debug          bool
+			Port           int
+			JWTSecret      string
+			EncryptionKey  string
+			AllowedOrigins []string
 		}{
-			JWTSecret:     "test-secret-key-for-testing-purposes-only",
-			EncryptionKey: "test-encryption-key-for-testing",
+			JWTSecret:      "test-secret-key-for-testing-purposes-only",
+			EncryptionKey:  "test-encryption-key-for-testing",
+			AllowedOrigins: []string{"http://localhost:3000"},
 		},
 	}
 }

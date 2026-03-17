@@ -243,6 +243,12 @@ func (h *UserHandler) GetUserByUsername(c *gin.Context) {
 
 // ListUsers lists all users (admin only)
 func (h *UserHandler) ListUsers(c *gin.Context) {
+	// Check if user is admin
+	if !isUserAdmin(c) {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Admin access required", ""))
+		return
+	}
+
 	page := getIntParam(c, "page", 1)
 	perPage := getIntParam(c, "per_page", 20)
 	status := c.Query("status")
@@ -268,6 +274,12 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 // UpdateUser updates a user (admin only)
 func (h *UserHandler) UpdateUser(c *gin.Context) {
+	// Check if user is admin
+	if !isUserAdmin(c) {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Admin access required", ""))
+		return
+	}
+
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {
@@ -312,6 +324,12 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 // BanUser bans a user (admin only)
 func (h *UserHandler) BanUser(c *gin.Context) {
+	// Check if user is admin
+	if !isUserAdmin(c) {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Admin access required", ""))
+		return
+	}
+
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {
@@ -340,6 +358,12 @@ func (h *UserHandler) BanUser(c *gin.Context) {
 
 // UnbanUser unbans a user (admin only)
 func (h *UserHandler) UnbanUser(c *gin.Context) {
+	// Check if user is admin
+	if !isUserAdmin(c) {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Admin access required", ""))
+		return
+	}
+
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {
@@ -368,6 +392,12 @@ func (h *UserHandler) UnbanUser(c *gin.Context) {
 
 // DeleteUser soft deletes a user (admin only)
 func (h *UserHandler) DeleteUser(c *gin.Context) {
+	// Check if user is admin
+	if !isUserAdmin(c) {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Admin access required", ""))
+		return
+	}
+
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {
@@ -436,6 +466,21 @@ func getIntParam(c *gin.Context, key string, defaultValue int) int {
 		return defaultValue
 	}
 	return value
+}
+
+// isUserAdmin checks if the authenticated user has admin role
+func isUserAdmin(c *gin.Context) bool {
+	user, exists := c.Get(string(types.ContextKeyUser))
+	if !exists {
+		return false
+	}
+
+	userObj, ok := user.(*instancemodels.User)
+	if !ok {
+		return false
+	}
+
+	return userObj.Role == instancemodels.UserRoleAdmin
 }
 
 // ChangePassword handles password change for authenticated user

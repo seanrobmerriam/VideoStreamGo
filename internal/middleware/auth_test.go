@@ -19,13 +19,15 @@ import (
 func setupTestConfig() *config.Config {
 	return &config.Config{
 		App: struct {
-			Environment   string
-			Debug         bool
-			Port          int
-			JWTSecret     string
-			EncryptionKey string
+			Environment    string
+			Debug          bool
+			Port           int
+			JWTSecret      string
+			EncryptionKey  string
+			AllowedOrigins []string
 		}{
-			JWTSecret: "test-secret-key-for-testing-purposes-only",
+			JWTSecret:      "test-secret-key-for-testing-purposes-only",
+			AllowedOrigins: []string{"http://localhost:3000"},
 		},
 	}
 }

@@ -17,6 +17,7 @@
 8. [Configuration](#8-configuration)
 9. [Testing](#9-testing)
 10. [Contributing](#10-contributing)
+11. [Security](#11-security)
 
 ---
 
@@ -35,6 +36,7 @@ VideoStreamGo is a white-label multi-tenant video streaming platform that enable
 | **Billing Integration** | Stripe integration for subscription management |
 | **Custom Branding** | Per-instance theming with colors, logos, and custom CSS |
 | **Video Streaming** | HLS adaptive bitrate streaming support |
+| **Security** | httpOnly cookie-based authentication, tenant isolation |
 
 ### Tech Stack
 
@@ -618,6 +620,9 @@ Base URL: `http://localhost:8080/v1`
 | `/auth/register` | POST | Register new admin user |
 | `/auth/login` | POST | Admin login |
 | `/auth/refresh` | POST | Refresh access token |
+| `/auth/logout` | POST | Admin logout (invalidates cookie) |
+
+> **Security Note:** Authentication uses httpOnly cookies. The server sets `auth_token` as an httpOnly, Secure, SameSite=Strict cookie on login. Clients must use `withCredentials: true` for cross-origin requests.
 
 #### Customers
 
@@ -679,8 +684,10 @@ Base URL: `http://localhost:8081/v1`
 |----------|--------|-------------|
 | `/auth/register` | POST | Register user |
 | `/auth/login` | POST | User login |
-| `/auth/logout` | POST | User logout |
+| `/auth/logout` | POST | User logout (invalidates cookie) |
 | `/auth/me` | GET | Get current user |
+
+> **Security Note:** Instance authentication uses httpOnly cookies for session management. Each instance has isolated user data and authentication state.
 
 #### Users
 
@@ -822,7 +829,9 @@ helm uninstall videostreamgo
 | `APP_ENV` | development | Environment (development/production) |
 | `APP_DEBUG` | true | Debug mode |
 | `APP_PORT` | 8080 | Platform API port |
-| `JWT_SECRET` | your-jwt-secret-key | JWT signing secret |
+| `JWT_SECRET` | **(required)** | JWT signing secret (min 32 characters) |
+| `ENCRYPTION_KEY` | **(required)** | Encryption key for sensitive data (min 32 characters, AES-256) |
+| `ALLOWED_ORIGINS` | **(required)** | Comma-separated CORS origins |
 
 #### Redis
 
@@ -879,7 +888,13 @@ S3_USE_SSL=false
 APP_ENV=development
 APP_DEBUG=true
 APP_PORT=8080
+
+# SECURITY - Required for production (min 32 characters each)
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
+ENCRYPTION_KEY=your-256-bit-encryption-key-change-in-production
+
+# CORS - Required: comma-separated list of allowed origins
+ALLOWED_ORIGINS=https://example.com,https://app.example.com
 
 # Stripe (optional)
 STRIPE_SECRET_KEY=
@@ -1023,6 +1038,97 @@ Closes #123
 - [ ] Documentation is updated
 - [ ] No linting errors
 - [ ] Changes are minimal and focused
+
+---
+
+## 11. Security
+
+### Security Improvements
+
+VideoStreamGo has implemented several security enhancements to protect user data and ensure proper tenant isolation.
+
+#### Token Storage (httpOnly Cookies)
+
+**Previous:** Tokens were stored in localStorage, vulnerable to XSS attacks.
+
+**Current:** Tokens are now stored in httpOnly cookies with the following attributes:
+
+```
+Set-Cookie: auth_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400
+```
+
+**Benefits:**
+- Cannot be accessed by JavaScript (prevents XSS token theft)
+- Automatically sent with requests
+- Protected by SameSite=Strict (CSRF prevention)
+- Requires Secure flag in production (HTTPS)
+
+**Frontend Requirements:**
+- Use `withCredentials: true` for cross-origin API requests
+- Server handles cookie creation and invalidation on logout
+
+#### Multi-Tenant Isolation
+
+The platform implements robust tenant isolation through:
+
+1. **Database Isolation**: Each tenant has a separate database (`instance_<uuid>`)
+2. **Storage Isolation**: Each tenant has a dedicated S3 bucket (`tenant-<uuid>`)
+3. **Subdomain-Based Routing**: Tenant context extracted from request subdomain
+4. **Platform Domain Protection**: Platform domains (admin, api, www) are explicitly blocked from tenant access
+
+#### Authentication & Authorization
+
+- **JWT Validation**: All tokens are validated with HS256 algorithm
+- **Role-Based Access Control (RBAC)**: Admin users have defined roles (super_admin, admin, viewer)
+- **Admin Status Verification**: Inactive admins cannot authenticate
+- **Instance-Level Authorization**: Users can only access their instance's resources
+
+### Required Environment Variables
+
+The following environment variables are **required** for production deployments:
+
+| Variable | Minimum Length | Purpose |
+|----------|---------------|---------|
+| `JWT_SECRET` | 32 characters | JWT token signing (HS256) |
+| `ENCRYPTION_KEY` | 32 characters | AES-256 encryption for sensitive data |
+| `ALLOWED_ORIGINS` | - | Comma-separated list of permitted CORS origins |
+
+**Important:**
+- `JWT_SECRET` and `ENCRYPTION_KEY` must be at least 32 characters
+- Use cryptographically secure random values in production
+- `ALLOWED_ORIGINS` should explicitly list all allowed origins (no wildcards in production)
+
+### CORS Configuration
+
+The `ALLOWED_ORIGINS` environment variable controls Cross-Origin Resource Sharing:
+
+```bash
+# Development (multiple local ports)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:4321
+
+# Production (explicit domains)
+ALLOWED_ORIGINS=https://example.com,https://app.example.com,https://admin.example.com
+```
+
+**Security Note:** Never use wildcard origins (`*`) in production. Always explicitly list allowed origins.
+
+### Security Headers
+
+The platform implements the following security headers:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Content-Type-Options` | nosniff | Prevent MIME type sniffing |
+| `X-Frame-Options` | DENY | Prevent clickjacking |
+| `X-XSS-Protection` | 1; mode=block | XSS filter (legacy browsers) |
+| `Strict-Transport-Security` | max-age=31536000 | Enforce HTTPS |
+
+### Rate Limiting
+
+API endpoints are protected by rate limiting to prevent abuse:
+
+- Default: 100 requests per minute per IP
+- Configurable via `RATE_LIMIT_REQUESTS` and `RATE_LIMIT_WINDOW`
 
 ---
 

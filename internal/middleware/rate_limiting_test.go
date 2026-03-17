@@ -8,22 +8,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/time/rate"
 )
 
 // Test_RateLimiter_BasicFunctionality tests basic rate limiting functionality
 func Test_RateLimiter_BasicFunctionality(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 60,
-		RequestsPerHour:   1000,
-		RequestsPerDay:    10000,
-		BurstSize:         10,
-	})
+	limiter := NewRateLimiter(rate.Limit(60), 10)
 
 	r := gin.New()
-	r.Use(limiter.Middleware())
+	r.Use(RateLimitMiddleware(limiter))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -33,94 +30,184 @@ func Test_RateLimiter_BasicFunctionality(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-
-	// Check rate limit headers are present
-	assert.Contains(t, w.Header(), "X-RateLimit-Limit")
-	assert.Contains(t, w.Header(), "X-RateLimit-Remaining")
-	assert.Contains(t, w.Header(), "X-RateLimit-Reset")
 }
 
 // Test_RateLimiter_ExceedsLimit tests that requests exceeding limit are rejected
 func Test_RateLimiter_ExceedsLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 5, // Very low limit for testing
-		RequestsPerHour:   100,
-		RequestsPerDay:    1000,
-		BurstSize:         2,
-	})
+	// Use a fresh limiter with very low limit (allows 2 requests per IP)
+	limiter := NewRateLimiter(rate.Limit(2), 2)
 
 	r := gin.New()
-	r.Use(limiter.Middleware())
+	r.Use(RateLimitMiddleware(limiter))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
 
-	// Make requests up to the limit
-	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest("GET", "/test", nil)
-		w := httptest.NewRecorder()
-		r.ServeHTTP(w, req)
-		if i < 5 {
-			assert.Equal(t, http.StatusOK, w.Code)
-		}
-	}
-
-	// Next request should be rate limited
-	req := httptest.NewRequest("GET", "/test", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusTooManyRequests, w.Code)
-}
-
-// Test_RateLimiter_DifferentIPs tests that different IPs have separate limits
-func Test_RateLimiter_DifferentIPs(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 10,
-		RequestsPerHour:   100,
-		RequestsPerDay:    1000,
-		BurstSize:         5,
-	})
-
-	r := gin.New()
-	r.Use(limiter.Middleware())
-	r.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
-	})
-
-	// IP 1 makes requests
+	// Make requests from the same IP
+	// First 2 should succeed (burst), 3rd should be rate limited
 	for i := 0; i < 3; i++ {
 		req := httptest.NewRequest("GET", "/test", nil)
-		req.Header.Set("X-Forwarded-For", "192.168.1.1")
+		req.RemoteAddr = "10.0.0.1:1234"
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if i < 2 {
+			assert.Equal(t, http.StatusOK, w.Code, "Request %d should succeed", i+1)
+		} else {
+			assert.Equal(t, http.StatusTooManyRequests, w.Code, "Request %d should be rate limited", i+1)
+		}
+	}
+}
+
+// Test_RateLimiter_DifferentTenants tests that different tenants have separate limits
+func Test_RateLimiter_DifferentTenants(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	limiter := NewRateLimiter(rate.Limit(10), 5)
+
+	// Tenant 1 router with tenant middleware
+	r1 := gin.New()
+	tenant1ID := uuid.New()
+	r1.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenant1ID)
+		c.Next()
+	})
+	r1.Use(RateLimitMiddleware(limiter))
+	r1.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	// Tenant 1 makes requests - should succeed
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+		r1.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	}
+
+	// Tenant 2 router with different tenant
+	r2 := gin.New()
+	tenant2ID := uuid.New()
+	r2.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenant2ID)
+		c.Next()
+	})
+	r2.Use(RateLimitMiddleware(limiter))
+	r2.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	// Tenant 2 should have its own limit - should succeed
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	r2.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+// Test_RateLimiter_PerTenantIsolation tests that one tenant cannot affect another
+func Test_RateLimiter_PerTenantIsolation(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Very restrictive limiter - only allows 2 requests
+	limiter := NewRateLimiter(rate.Limit(2), 2)
+
+	r := gin.New()
+	r.Use(RateLimitMiddleware(limiter))
+	r.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	tenant1ID := uuid.New()
+
+	// Tenant 1 uses up the limit - we need to simulate requests with tenant context
+	// by adding a middleware that sets the tenant
+	r2 := gin.New()
+	r2.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenant1ID)
+		c.Next()
+	})
+	r2.Use(RateLimitMiddleware(limiter))
+	r2.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+		r2.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	}
+
+	// Tenant 1 should now be rate limited
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	r2.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+
+	// Tenant 2 (different UUID) should still be able to make requests
+	r3 := gin.New()
+	tenant2ID := uuid.New()
+	r3.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenant2ID)
+		c.Next()
+	})
+	r3.Use(RateLimitMiddleware(limiter))
+	r3.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	req = httptest.NewRequest("GET", "/test", nil)
+	w = httptest.NewRecorder()
+	r3.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code, "Tenant 2 should not be rate limited by Tenant 1's usage")
+}
+
+// Test_RateLimiter_FallbackToIP tests fallback to IP when tenant ID is not available
+func Test_RateLimiter_FallbackToIP(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	limiter := NewRateLimiter(rate.Limit(2), 2)
+
+	r := gin.New()
+	r.Use(RateLimitMiddleware(limiter))
+	r.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	// First request without tenant ID - uses IP
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "192.168.1.1:1234"
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
 	}
 
-	// IP 2 should have its own limit
+	// Should be rate limited (IP-based)
 	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("X-Forwarded-For", "192.168.1.2")
+	req.RemoteAddr = "192.168.1.1:1234"
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+
+	// Different IP should work
+	req = httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "192.168.1.2:1234"
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code, "Different IP should have separate limit")
 }
 
 // Test_RateLimiter_ConcurrentAccess tests rate limiting under concurrent access
 func Test_RateLimiter_ConcurrentAccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 100,
-		RequestsPerHour:   1000,
-		RequestsPerDay:    10000,
-		BurstSize:         20,
-	})
+	// Use a higher limit to allow more concurrent requests
+	limiter := NewRateLimiter(rate.Limit(100), 50)
 
 	r := gin.New()
-	r.Use(limiter.Middleware())
+	r.Use(RateLimitMiddleware(limiter))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -155,7 +242,8 @@ func Test_RateLimiter_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Most requests should succeed (within rate limit)
-	assert.Greater(t, successCount, 40)
+	// With 100 rps and 50 burst, 50 concurrent requests should all succeed
+	assert.Greater(t, successCount, 45)
 }
 
 // Test_RateLimiter_ResetAfterWindow tests that limit resets after time window
@@ -163,15 +251,10 @@ func Test_RateLimiter_ResetAfterWindow(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	// Create a limiter with 1 second window
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 2, // Very low limit
-		RequestsPerHour:   100,
-		RequestsPerDay:    1000,
-		BurstSize:         1,
-	})
+	limiter := NewRateLimiter(rate.Limit(2), 1)
 
 	r := gin.New()
-	r.Use(limiter.Middleware())
+	r.Use(RateLimitMiddleware(limiter))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -199,147 +282,51 @@ func Test_RateLimiter_ResetAfterWindow(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-// Test_RateLimiter_Headers tests rate limit response headers
-func Test_RateLimiter_Headers(t *testing.T) {
+// Test_GetRateLimitKey_TenantID tests that tenant ID is used when available
+func Test_GetRateLimitKey_TenantID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 60,
-		RequestsPerHour:   1000,
-		RequestsPerDay:    10000,
-		BurstSize:         10,
-	})
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	r := gin.New()
-	r.Use(limiter.Middleware())
-	r.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
-	})
+	// Test with tenant ID
+	tenantID := uuid.New()
+	c.Set("tenant_id", tenantID)
 
-	req := httptest.NewRequest("GET", "/test", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	// Check headers are present
-	assert.Equal(t, "60", w.Header().Get("X-RateLimit-Limit"))
-	assert.Equal(t, "59", w.Header().Get("X-RateLimit-Remaining"))
-	assert.NotEmpty(t, w.Header().Get("X-RateLimit-Reset"))
+	key := getRateLimitKey(c)
+	assert.Equal(t, "tenant:"+tenantID.String(), key)
 }
 
-// Test_RateLimiter_RetryAfterHeader tests Retry-After header on rate limit
-func Test_RateLimiter_RetryAfterHeader(t *testing.T) {
+// Test_GetRateLimitKey_FallbackToIP tests fallback to IP when tenant ID is not available
+func Test_GetRateLimitKey_FallbackToIP(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	limiter := NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: 1,
-		RequestsPerHour:   100,
-		RequestsPerDay:    1000,
-		BurstSize:         1,
-	})
-
-	r := gin.New()
-	r.Use(limiter.Middleware())
-	r.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
-	})
-
-	// First request succeeds
-	req := httptest.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
+	c, _ := gin.CreateTestContext(w)
 
-	// Second request should be rate limited
-	req = httptest.NewRequest("GET", "/test", nil)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+	// Test without tenant ID - should fall back to IP
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "192.168.1.100:8080"
+	c.Request = req
 
-	// Check Retry-After header
-	assert.NotEmpty(t, w.Header().Get("Retry-After"))
+	key := getRateLimitKey(c)
+	assert.Equal(t, "ip:192.168.1.100", key)
 }
 
-// RateLimiterConfig for testing
-type RateLimiterConfig struct {
-	RequestsPerMinute int
-	RequestsPerHour   int
-	RequestsPerDay    int
-	BurstSize         int
-}
+// Test_GetRateLimitKey_NilTenant tests fallback to IP when tenant ID is nil
+func Test_GetRateLimitKey_NilTenant(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 
-// NewRateLimiter creates a new rate limiter for testing
-func NewRateLimiter(config RateLimiterConfig) *TestRateLimiter {
-	return &TestRateLimiter{
-		config:            config,
-		requests:          make(map[string][]time.Time),
-		mu:                sync.Mutex{},
-		requestsPerMinute: config.RequestsPerMinute,
-		requestsPerHour:   config.RequestsPerHour,
-		requestsPerDay:    config.RequestsPerDay,
-		burstSize:         config.BurstSize,
-	}
-}
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
 
-// TestRateLimiter is a test version of the rate limiter
-type TestRateLimiter struct {
-	config            RateLimiterConfig
-	requests          map[string][]time.Time
-	mu                sync.Mutex
-	requestsPerMinute int
-	requestsPerHour   int
-	requestsPerDay    int
-	burstSize         int
-}
+	// Set tenant_id to nil UUID
+	c.Set("tenant_id", uuid.Nil)
 
-// Middleware returns the rate limiting middleware
-func (rl *TestRateLimiter) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		now := time.Now()
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "192.168.1.100:8080"
+	c.Request = req
 
-		rl.mu.Lock()
-		defer rl.mu.Unlock()
-
-		// Clean old requests
-		rl.cleanOldRequests(ip, now)
-
-		// Count recent requests
-		recentRequests := rl.requests[ip]
-
-		// Check if within burst limit
-		if len(recentRequests) >= rl.burstSize {
-			c.Header("Retry-After", "1")
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"error": map[string]string{
-					"code":    "RATE_LIMIT_EXCEEDED",
-					"message": "Too many requests",
-				},
-			})
-			return
-		}
-
-		// Add request
-		rl.requests[ip] = append(recentRequests, now)
-
-		// Set headers
-		remaining := rl.burstSize - len(rl.requests[ip])
-		c.Header("X-RateLimit-Limit", string(rune('0'+rl.burstSize)))
-		c.Header("X-RateLimit-Remaining", string(rune('0'+remaining)))
-		c.Header("X-RateLimit-Reset", now.Format(time.RFC3339))
-
-		c.Next()
-	}
-}
-
-// cleanOldRequests removes requests outside the time window
-func (rl *TestRateLimiter) cleanOldRequests(ip string, now time.Time) {
-	cutoff := now.Add(-time.Minute)
-	requests := rl.requests[ip]
-	var validRequests []time.Time
-	for _, reqTime := range requests {
-		if reqTime.After(cutoff) {
-			validRequests = append(validRequests, reqTime)
-		}
-	}
-	rl.requests[ip] = validRequests
+	key := getRateLimitKey(c)
+	// Should fall back to IP when tenant ID is nil
+	assert.Equal(t, "ip:192.168.1.100", key)
 }

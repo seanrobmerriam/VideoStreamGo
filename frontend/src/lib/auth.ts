@@ -24,8 +24,32 @@ export interface RegisterData {
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  // NOTE: token is now set as httpOnly cookie by the server
+  // The frontend receives it only for reference; actual auth is cookie-based
+  token?: string;
 }
+
+/**
+ * SECURITY FIX: Token Storage
+ * 
+ * Tokens are now stored in httpOnly cookies instead of localStorage.
+ * 
+ * BACKEND REQUIREMENT:
+ * The server MUST set the following cookie header on login/register responses:
+ * 
+ * ```
+ * Set-Cookie: auth_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=<expiry>
+ * ```
+ * 
+ * Benefits of httpOnly cookies:
+ * - Cannot be accessed by JavaScript (prevents XSS token theft)
+ * - Automatically sent with requests (withCredentials: true required)
+ * - Protected by SameSite=Strict CSRF prevention
+ * 
+ * IMPORTANT: The frontend uses withCredentials: true in axios config,
+ * which enables automatic cookie transmission. The server must handle
+ * cookie creation and invalidation.
+ */
 
 // Platform Auth
 export const platformAuth = {
@@ -72,26 +96,54 @@ export const instanceAuth = {
   },
 };
 
-// Token management
+// Token management - Cookie-based
+// Note: We cannot read httpOnly cookies from JavaScript for security.
+// The browser automatically sends them with requests when withCredentials: true is set.
 export const tokenManager = {
+  /**
+   * Get token from cookie (non-httpOnly for display purposes only)
+   * For actual auth, cookies are sent automatically - we can't read httpOnly cookies.
+   * This is intentionally returns null as httpOnly cookies cannot be accessed by JS.
+   */
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    // httpOnly cookies cannot be read by JavaScript - this is the security feature
+    // The browser automatically sends cookies with requests
+    // Return null to indicate we rely on cookie-based auth
+    return null;
   },
 
-  setToken(token: string): void {
-    localStorage.setItem('auth_token', token);
+  /**
+   * Set token - NO OP for httpOnly cookies
+   * The server sets the cookie via Set-Cookie header
+   */
+  setToken(_token: string): void {
+    // Token is set by server via httpOnly cookie
+    // This is a no-op for security - we cannot set httpOnly cookies from JavaScript
+    console.warn('Token setting is handled server-side via httpOnly cookies');
   },
 
+  /**
+   * Remove token - NO OP for httpOnly cookies
+   * The server should invalidate the cookie via logout endpoint
+   */
   removeToken(): void {
-    localStorage.removeItem('auth_token');
+    // Token removal is handled by server via logout endpoint
+    // This is a no-op for security
+    console.warn('Token removal is handled server-side via logout');
   },
 
+  /**
+   * Store user data in localStorage (non-sensitive data only)
+   * User data is not sensitive - it's public profile info
+   */
   getStoredUser(): User | null {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   },
 
   setStoredUser(user: User): void {
+    // Store user in localStorage for UI display purposes
+    // This is not sensitive auth data - just user profile info
     localStorage.setItem('user', JSON.stringify(user));
   },
 
@@ -100,14 +152,18 @@ export const tokenManager = {
   },
 
   clearAll(): void {
-    this.removeToken();
+    // For httpOnly cookies, we can't clear the token from JS
+    // The logout API call handles cookie invalidation
     this.removeStoredUser();
   },
 };
 
 // Auth helper
 export const isAuthenticated = (): boolean => {
-  return !!tokenManager.getToken();
+  // With httpOnly cookies, we can't check the token directly
+  // The auth store should call getCurrentUser() to verify authentication
+  // This function now returns false - actual auth check is done server-side
+  return false;
 };
 
 export const hasRole = (user: User | null, roles: User['role'][]): boolean => {

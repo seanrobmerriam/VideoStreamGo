@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -39,11 +40,12 @@ type Config struct {
 
 	// Application Configuration
 	App struct {
-		Environment   string
-		Debug         bool
-		Port          int
-		JWTSecret     string
+		Environment    string
+		Debug          bool
+		Port           int
+		JWTSecret      string
 		EncryptionKey string
+		AllowedOrigins []string
 	}
 
 	// Redis Configuration
@@ -112,8 +114,26 @@ func Load() (*Config, error) {
 	cfg.App.Environment = getEnv("APP_ENV", "development")
 	cfg.App.Debug = getEnvBool("APP_DEBUG", true)
 	cfg.App.Port = getEnvInt("APP_PORT", 8080)
-	cfg.App.JWTSecret = getEnv("JWT_SECRET", "your-jwt-secret-key")
-	cfg.App.EncryptionKey = getEnv("ENCRYPTION_KEY", "your-32-byte-encryption-key")
+
+	// CORS Allowed Origins - comma-separated list of permitted origins
+	// For production, explicitly list all allowed origins
+	allowedOriginsEnv := getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:4321")
+	cfg.App.AllowedOrigins = parseAllowedOrigins(allowedOriginsEnv)
+
+	// Security-sensitive configuration - these MUST be set in production
+	// JWT_SECRET must be at least 32 characters for HS256
+	jwtSecret, err := getEnvRequiredWithMinLength("JWT_SECRET", 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT_SECRET: %w", err)
+	}
+	cfg.App.JWTSecret = jwtSecret
+
+	// ENCRYPTION_KEY must be at least 32 characters for AES-256
+	encryptionKey, err := getEnvRequiredWithMinLength("ENCRYPTION_KEY", 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ENCRYPTION_KEY: %w", err)
+	}
+	cfg.App.EncryptionKey = encryptionKey
 
 	// Redis Configuration
 	cfg.Redis.Host = getEnv("REDIS_HOST", "localhost")
@@ -176,6 +196,26 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+// getEnvRequired retrieves a required environment variable, returning an error if not set
+func getEnvRequired(key string) (string, error) {
+	if value, exists := os.LookupEnv(key); exists && value != "" {
+		return value, nil
+	}
+	return "", fmt.Errorf("required environment variable %s is not set", key)
+}
+
+// getEnvRequiredWithMinLength retrieves a required environment variable with minimum length validation
+func getEnvRequiredWithMinLength(key string, minLength int) (string, error) {
+	value, err := getEnvRequired(key)
+	if err != nil {
+		return "", err
+	}
+	if len(value) < minLength {
+		return "", fmt.Errorf("environment variable %s must be at least %d characters", key, minLength)
+	}
+	return value, nil
+}
+
 // getEnvInt retrieves environment variable as int with default value
 func getEnvInt(key string, defaultValue int) int {
 	if value, exists := os.LookupEnv(key); exists {
@@ -194,4 +234,20 @@ func getEnvBool(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+// parseAllowedOrigins parses a comma-separated string of allowed origins
+func parseAllowedOrigins(origins string) []string {
+	if origins == "" {
+		return []string{}
+	}
+	var result []string
+	parts := strings.Split(origins, ",")
+	for _, p := range parts {
+		origin := strings.TrimSpace(p)
+		if origin != "" {
+			result = append(result, origin)
+		}
+	}
+	return result
 }

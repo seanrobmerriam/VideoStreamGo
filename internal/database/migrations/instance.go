@@ -32,8 +32,8 @@ func instanceMigrate001_createUsers(db *gorm.DB) error {
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			instance_id UUID NOT NULL,
-			username VARCHAR(50) UNIQUE NOT NULL,
-			email VARCHAR(255) UNIQUE NOT NULL,
+			username VARCHAR(50) NOT NULL,
+			email VARCHAR(255) NOT NULL,
 			password_hash VARCHAR(255) NOT NULL,
 			display_name VARCHAR(100),
 			avatar_url VARCHAR(500),
@@ -54,6 +54,8 @@ func instanceMigrate001_createUsers(db *gorm.DB) error {
 
 	// Add indexes
 	indexes := []string{
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_instance_username ON users(instance_id, username);`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_instance_email ON users(instance_id, email);`,
 		`CREATE INDEX IF NOT EXISTS idx_users_instance ON users(instance_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);`,
 		`CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);`,
@@ -76,7 +78,7 @@ func instanceMigrate002_createVideos(db *gorm.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			instance_id UUID NOT NULL,
 			title VARCHAR(255) NOT NULL,
-			slug VARCHAR(255) UNIQUE NOT NULL,
+			slug VARCHAR(255) NOT NULL,
 			description TEXT,
 			user_id UUID NOT NULL REFERENCES users(id),
 			category_id UUID REFERENCES categories(id),
@@ -115,13 +117,13 @@ func instanceMigrate002_createVideos(db *gorm.DB) error {
 
 	// Add indexes as specified in ARCHITECTURE.md Section 4.3
 	indexes := []string{
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_videos_instance_slug ON videos(instance_id, slug);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_instance ON videos(instance_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_user ON videos(user_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_category ON videos(category_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_status ON videos(status);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_created ON videos(created_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_view_count ON videos(view_count DESC);`,
-		`CREATE INDEX IF NOT EXISTS idx_videos_slug ON videos(slug);`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_featured ON videos(is_featured) WHERE is_featured = true;`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_public_status ON videos(is_public, status) WHERE is_public = true AND status = 'active';`,
 		`CREATE INDEX IF NOT EXISTS idx_videos_deleted_at ON videos(deleted_at) WHERE deleted_at IS NULL;`,
@@ -142,7 +144,7 @@ func instanceMigrate003_createCategories(db *gorm.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			instance_id UUID NOT NULL,
 			name VARCHAR(100) NOT NULL,
-			slug VARCHAR(100) UNIQUE NOT NULL,
+			slug VARCHAR(100) NOT NULL,
 			description TEXT,
 			parent_id UUID REFERENCES categories(id),
 			icon_url VARCHAR(500),
@@ -159,6 +161,7 @@ func instanceMigrate003_createCategories(db *gorm.DB) error {
 
 	// Add indexes
 	indexes := []string{
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_instance_slug ON categories(instance_id, slug);`,
 		`CREATE INDEX IF NOT EXISTS idx_categories_instance ON categories(instance_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON categories(sort_order);`,
@@ -180,7 +183,7 @@ func instanceMigrate004_createTags(db *gorm.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			instance_id UUID NOT NULL,
 			name VARCHAR(100) NOT NULL,
-			slug VARCHAR(100) UNIQUE NOT NULL,
+			slug VARCHAR(100) NOT NULL,
 			usage_count INTEGER DEFAULT 0,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 		);
@@ -191,8 +194,8 @@ func instanceMigrate004_createTags(db *gorm.DB) error {
 
 	// Add indexes
 	indexes := []string{
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_instance_slug ON tags(instance_id, slug);`,
 		`CREATE INDEX IF NOT EXISTS idx_tags_instance ON tags(instance_id);`,
-		`CREATE INDEX IF NOT EXISTS idx_tags_slug ON tags(slug);`,
 		`CREATE INDEX IF NOT EXISTS idx_tags_usage_count ON tags(usage_count DESC);`,
 	}
 	for _, idx := range indexes {
@@ -506,7 +509,7 @@ func instanceMigrate014_createPages(db *gorm.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			instance_id UUID NOT NULL,
 			title VARCHAR(255) NOT NULL,
-			slug VARCHAR(255) UNIQUE NOT NULL,
+			slug VARCHAR(255) NOT NULL,
 			content TEXT NOT NULL,
 			excerpt VARCHAR(500),
 			page_type VARCHAR(50) DEFAULT 'custom' CHECK (page_type IN ('static', 'custom', 'legal', 'error')),
@@ -529,6 +532,7 @@ func instanceMigrate014_createPages(db *gorm.DB) error {
 
 	// Add indexes
 	indexes := []string{
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_pages_instance_slug ON pages(instance_id, slug);`,
 		`CREATE INDEX IF NOT EXISTS idx_pages_instance ON pages(instance_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_pages_published ON pages(is_published);`,
 		`CREATE INDEX IF NOT EXISTS idx_pages_type ON pages(page_type);`,

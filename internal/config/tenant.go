@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -314,14 +315,28 @@ func (l *TenantConfigLoader) SaveTenantConfig(instanceID string, config *TenantC
 
 // SerializeTenantConfig serializes a tenant config to JSON string
 func SerializeTenantConfig(config TenantConfig) string {
-	// Simplified serialization - in production use proper JSON marshaling
-	return config.InstanceID
+	// Marshal all fields to JSON
+	data, err := json.Marshal(config)
+	if err != nil {
+		// Fallback to minimal serialization on error
+		return "{}"
+	}
+	return string(data)
 }
 
 // ParseTenantConfig parses a serialized tenant config
 func ParseTenantConfig(data string) (*TenantConfig, error) {
-	// Simplified parsing - in production use proper JSON unmarshaling
-	config := DefaultTenantConfig()
-	config.InstanceID = data
+	if data == "" || data == "{}" {
+		// Return default config for empty data
+		defaultConfig := DefaultTenantConfig()
+		return &defaultConfig, nil
+	}
+
+	var config TenantConfig
+	if err := json.Unmarshal([]byte(data), &config); err != nil {
+		// Return default config on parse error
+		defaultConfig := DefaultTenantConfig()
+		return &defaultConfig, err
+	}
 	return &config, nil
 }

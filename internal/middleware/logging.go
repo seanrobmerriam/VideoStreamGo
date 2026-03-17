@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -75,16 +76,41 @@ func RecoveryLogger() gin.HandlerFunc {
 	}
 }
 
+// isOriginAllowed checks if the given origin is in the list of allowed origins
+func isOriginAllowed(origin string, allowedOrigins []string) bool {
+	if origin == "" {
+		return false
+	}
+	for _, allowed := range allowedOrigins {
+		if strings.EqualFold(origin, allowed) {
+			return true
+		}
+	}
+	return false
+}
+
 // CORS adds CORS headers to responses
-func CORS() gin.HandlerFunc {
+// allowedOrigins parameter should be a list of permitted origins (e.g., from config)
+func CORS(allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		origin := c.Request.Header.Get("Origin")
+
+		// Only allow configured origins (not wildcard)
+		if isOriginAllowed(origin, allowedOrigins) {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Credentials", "true")
+		}
+
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Request-ID")
 		c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID")
 		c.Header("Access-Control-Max-Age", "86400")
 
 		if c.Request.Method == "OPTIONS" {
+			// If origin is not allowed, still return 204 but without Allow-Credentials
+			if !isOriginAllowed(origin, allowedOrigins) && origin != "" {
+				log.Printf("[CORS] Rejected origin: %s", origin)
+			}
 			c.AbortWithStatus(204)
 			return
 		}

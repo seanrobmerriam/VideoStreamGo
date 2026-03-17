@@ -274,6 +274,21 @@ func InstanceAuthMiddleware(db *gorm.DB, cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
+		// CRITICAL: Validate JWT instance_id matches tenant context from Host header
+		// This prevents cross-tenant access attacks
+		if tenantID, exists := c.Get(string(types.ContextKeyTenantID)); exists {
+			if tenantUUID, ok := tenantID.(uuid.UUID); ok {
+				if instanceID != tenantUUID {
+					c.AbortWithStatusJSON(http.StatusForbidden, types.ErrorResponse(
+						"TENANT_MISMATCH",
+						"Token instance_id does not match the requested tenant",
+						"",
+					))
+					return
+				}
+			}
+		}
+
 		// Fetch user from database
 		user, err := repo.GetByID(c.Request.Context(), userID)
 		if err != nil {

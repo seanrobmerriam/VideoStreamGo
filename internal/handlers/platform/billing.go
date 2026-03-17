@@ -30,7 +30,24 @@ func NewBillingHandler(billingRepo *masterRepo.BillingRecordRepository, customer
 }
 
 // ListRecords returns all billing records
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) ListRecords(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access billing records", ""))
+		return
+	}
+
 	page := getIntParam(c, "page", 1)
 	perPage := getIntParam(c, "per_page", 20)
 	status := c.Query("status")
@@ -71,7 +88,24 @@ func (h *BillingHandler) ListRecords(c *gin.Context) {
 }
 
 // GetRecord returns a billing record by ID
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetRecord(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access billing records", ""))
+		return
+	}
+
 	id := c.Param("id")
 	recordID, err := uuid.Parse(id)
 	if err != nil {
@@ -98,7 +132,24 @@ func (h *BillingHandler) GetRecord(c *gin.Context) {
 }
 
 // CreateRecord creates a new billing record
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) CreateRecord(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can create billing records", ""))
+		return
+	}
+
 	var req struct {
 		CustomerID  string  `json:"customer_id" binding:"required,uuid"`
 		Amount      float64 `json:"amount" binding:"required,gte=0"`
@@ -139,7 +190,24 @@ func (h *BillingHandler) CreateRecord(c *gin.Context) {
 }
 
 // GetUsageMetrics returns usage metrics for an instance
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetUsageMetrics(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access usage metrics", ""))
+		return
+	}
+
 	instanceID := c.Param("instance_id")
 	id, err := uuid.Parse(instanceID)
 	if err != nil {
@@ -161,7 +229,24 @@ func (h *BillingHandler) GetUsageMetrics(c *gin.Context) {
 }
 
 // GetOverview returns platform analytics overview
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetOverview(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access platform overview", ""))
+		return
+	}
+
 	revenue, _ := h.billingRepo.GetTotalRevenue(c.Request.Context())
 
 	c.JSON(http.StatusOK, types.SuccessResponse(map[string]interface{}{
@@ -175,7 +260,24 @@ func (h *BillingHandler) GetOverview(c *gin.Context) {
 }
 
 // GetRevenueReport returns revenue analytics
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetRevenueReport(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access revenue reports", ""))
+		return
+	}
+
 	revenue, _ := h.billingRepo.GetTotalRevenue(c.Request.Context())
 
 	c.JSON(http.StatusOK, types.SuccessResponse(map[string]interface{}{
@@ -186,7 +288,24 @@ func (h *BillingHandler) GetRevenueReport(c *gin.Context) {
 }
 
 // GetUsageReport returns usage analytics
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetUsageReport(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access usage reports", ""))
+		return
+	}
+
 	c.JSON(http.StatusOK, types.SuccessResponse(map[string]interface{}{
 		"total_storage_gb":   0,
 		"total_bandwidth_gb": 0,
@@ -196,7 +315,24 @@ func (h *BillingHandler) GetUsageReport(c *gin.Context) {
 }
 
 // ListCustomers lists all customers with billing info
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) ListCustomers(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access customer billing info", ""))
+		return
+	}
+
 	page := getIntParam(c, "page", 1)
 	perPage := getIntParam(c, "per_page", 20)
 	status := c.Query("status")
@@ -231,7 +367,24 @@ func (h *BillingHandler) ListCustomers(c *gin.Context) {
 }
 
 // GetCustomerBilling returns billing details for a specific customer
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetCustomerBilling(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access customer billing details", ""))
+		return
+	}
+
 	id := c.Param("id")
 	customerID, err := uuid.Parse(id)
 	if err != nil {
@@ -264,7 +417,24 @@ func (h *BillingHandler) GetCustomerBilling(c *gin.Context) {
 }
 
 // GenerateInvoice generates an invoice for a customer
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GenerateInvoice(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can generate invoices", ""))
+		return
+	}
+
 	id := c.Param("id")
 	customerID, err := uuid.Parse(id)
 	if err != nil {
@@ -295,7 +465,24 @@ func (h *BillingHandler) GenerateInvoice(c *gin.Context) {
 }
 
 // GetBillingReports returns billing reports
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetBillingReports(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access billing reports", ""))
+		return
+	}
+
 	revenueByStatus, _ := h.billingRepo.GetRevenueByStatus(c.Request.Context())
 
 	c.JSON(http.StatusOK, types.SuccessResponse(map[string]interface{}{
@@ -308,7 +495,24 @@ func (h *BillingHandler) GetBillingReports(c *gin.Context) {
 }
 
 // GetRevenueAnalytics returns revenue analytics
+// Requires super_admin role (enforced at router level)
 func (h *BillingHandler) GetRevenueAnalytics(c *gin.Context) {
+	// Authorization check - verify admin is super_admin
+	admin, exists := c.Get(string(types.ContextKeyAdminUser))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse("UNAUTHORIZED", "Admin not authenticated", ""))
+		return
+	}
+	adminUser, ok := admin.(*master.AdminUser)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse("INTERNAL_ERROR", "Invalid admin user type", ""))
+		return
+	}
+	if adminUser.Role != master.AdminRoleSuperAdmin {
+		c.JSON(http.StatusForbidden, types.ErrorResponse("FORBIDDEN", "Only super_admin can access revenue analytics", ""))
+		return
+	}
+
 	months := getIntParam(c, "months", 12)
 
 	totalRevenue, _ := h.billingRepo.GetTotalRevenue(c.Request.Context())

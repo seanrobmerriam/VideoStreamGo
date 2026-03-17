@@ -6,47 +6,63 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 
 	"videostreamgo/internal/types"
 )
 
-// IPRateLimiter tracks rate limits per IP address
-type IPRateLimiter struct {
+// RateLimiter tracks rate limits per key (tenant ID or IP address)
+type RateLimiter struct {
 	limiters map[string]*rate.Limiter
 	mu       sync.RWMutex
 	rate     rate.Limit
 	burst    int
 }
 
-// NewIPRateLimiter creates a new rate limiter
-func NewIPRateLimiter(r rate.Limit, burst int) *IPRateLimiter {
-	return &IPRateLimiter{
+// NewRateLimiter creates a new rate limiter
+func NewRateLimiter(r rate.Limit, burst int) *RateLimiter {
+	return &RateLimiter{
 		limiters: make(map[string]*rate.Limiter),
 		rate:     r,
 		burst:    burst,
 	}
 }
 
-// getLimiter returns the limiter for an IP, creating one if needed
-func (i *IPRateLimiter) getLimiter(ip string) *rate.Limiter {
+// getLimiter returns the limiter for a key, creating one if needed
+func (i *RateLimiter) getLimiter(key string) *rate.Limiter {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
-	limiter, exists := i.limiters[ip]
+	limiter, exists := i.limiters[key]
 	if !exists {
 		limiter = rate.NewLimiter(i.rate, i.burst)
-		i.limiters[ip] = limiter
+		i.limiters[key] = limiter
 	}
 
 	return limiter
 }
 
+// getRateLimitKey extracts the rate limit key from the gin context.
+// Priority: tenant ID from context > IP address
+// This prevents noisy neighbor problem by limiting per-tenant instead of globally
+func getRateLimitKey(c *gin.Context) string {
+	// First, try to get tenant ID from context
+	if tenantID, exists := c.Get(string(types.ContextKeyTenantID)); exists {
+		if id, ok := tenantID.(uuid.UUID); ok && id != uuid.Nil {
+			return "tenant:" + id.String()
+		}
+	}
+
+	// Fall back to IP address if tenant context is not available
+	return "ip:" + c.ClientIP()
+}
+
 // RateLimitMiddleware creates a Gin middleware for rate limiting
-func RateLimitMiddleware(rl *IPRateLimiter) gin.HandlerFunc {
+func RateLimitMiddleware(rl *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		limiter := rl.getLimiter(ip)
+		key := getRateLimitKey(c)
+		limiter := rl.getLimiter(key)
 
 		if !limiter.Allow() {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, types.ErrorResponse(
@@ -61,8 +77,8 @@ func RateLimitMiddleware(rl *IPRateLimiter) gin.HandlerFunc {
 	}
 }
 
-// GlobalRateLimiter provides a package-level rate limiter
-var GlobalRateLimiter = NewIPRateLimiter(rate.Limit(100), 200)
+// GlobalRateLimiter provides a package-level rate limiter (per-tenant)
+var GlobalRateLimiter = NewRateLimiter(rate.Limit(100), 200)
 
 // RateLimit provides a simple rate limiting middleware using the global limiter
 func RateLimit() gin.HandlerFunc {
@@ -71,7 +87,7 @@ func RateLimit() gin.HandlerFunc {
 
 // RateLimitByEndpoint creates a rate limiter for specific endpoints
 func RateLimitByEndpoint(ratePerSecond rate.Limit, burst int) gin.HandlerFunc {
-	limiter := NewIPRateLimiter(ratePerSecond, burst)
+	limiter := NewRateLimiter(ratePerSecond, burst)
 	return RateLimitMiddleware(limiter)
 }
 
@@ -124,8 +140,8 @@ func (s *slidingWindowLimiter) Allow(key string) bool {
 func SlidingWindowRateLimit(windowSize time.Duration, limit int) gin.HandlerFunc {
 	limiter := NewSlidingWindowLimiter(windowSize, limit)
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		if !limiter.Allow(ip) {
+		key := getRateLimitKey(c)
+		if !limiter.Allow(key) {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, types.ErrorResponse(
 				"RATE_LIMIT_EXCEEDED",
 				"Too many requests. Please try again later.",

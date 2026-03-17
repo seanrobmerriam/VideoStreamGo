@@ -9,32 +9,23 @@ const createApiClient = (baseURL: string): AxiosInstance => {
   const client = axios.create({
     baseURL,
     timeout: 30000,
+    withCredentials: true, // Required for httpOnly cookies - browser sends cookies automatically
     headers: {
       'Content-Type': 'application/json',
     },
   });
 
-  // Request interceptor
-  client.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem('auth_token');
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error: AxiosError) => {
-      return Promise.reject(error);
-    }
-  );
+  // NOTE: With httpOnly cookies, the browser automatically sends cookies with requests.
+  // We no longer need to manually set Authorization headers.
+  // The server sets the cookie with HttpOnly, Secure, and SameSite=Strict flags.
 
   // Response interceptor
   client.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
       if (error.response?.status === 401) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
+        // On 401, clear user state (token is in httpOnly cookie, can't clear it from JS)
+        // The backend should handle cookie invalidation on logout
         window.location.href = '/login';
       }
       return Promise.reject(error);

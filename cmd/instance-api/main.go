@@ -34,7 +34,7 @@ func main() {
 	// Add global middleware
 	router.Use(middleware.RecoveryLogger())
 	router.Use(middleware.RequestLogger())
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(cfg.App.AllowedOrigins))
 	router.Use(middleware.SecurityHeaders())
 	router.Use(middleware.RateLimit())
 

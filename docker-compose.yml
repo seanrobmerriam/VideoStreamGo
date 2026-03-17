@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     container_name: videostreamgo-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-videostreamgo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword}
-      POSTGRES_DB: ${MASTER_DB_NAME:-videostreamgo_master}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MASTER_DB_NAME}
     volumes:
       - postgres_master_data:/var/lib/postgresql/data
     ports:
@@ -14,7 +14,7 @@ services:
     networks:
       - videostreamgo_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-videostreamgo}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,8 +44,8 @@ services:
     container_name: videostreamgo-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     ports:
@@ -69,18 +69,20 @@ services:
     environment:
       - MASTER_DB_HOST=postgres-master
       - MASTER_DB_PORT=5432
-      - MASTER_DB_USER=${POSTGRES_USER:-videostreamgo}
-      - MASTER_DB_PASSWORD=${POSTGRES_PASSWORD:-securepassword}
-      - MASTER_DB_NAME=${MASTER_DB_NAME:-videostreamgo_master}
+      - MASTER_DB_USER=${POSTGRES_USER}
+      - MASTER_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - MASTER_DB_NAME=${MASTER_DB_NAME}
       - MASTER_DB_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - S3_ENDPOINT=minio:9000
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - S3_USE_SSL=false
       - S3_BUCKET=videostreamgo
-      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - APP_ENV=development
       - APP_PORT=8080
     ports:
@@ -113,16 +115,21 @@ services:
     environment:
       - MASTER_DB_HOST=postgres-master
       - MASTER_DB_PORT=5432
-      - MASTER_DB_USER=${POSTGRES_USER:-videostreamgo}
-      - MASTER_DB_PASSWORD=${POSTGRES_PASSWORD:-securepassword}
+      - MASTER_DB_USER=${POSTGRES_USER}
+      - MASTER_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - MASTER_DB_NAME=${MASTER_DB_NAME}
       - MASTER_DB_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - S3_ENDPOINT=minio:9000
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - S3_USE_SSL=false
-      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key}
+      - S3_BUCKET=videostreamgo
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - INSTANCE_JWT_SECRET=${INSTANCE_JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - APP_ENV=development
       - APP_PORT=8081
     ports:

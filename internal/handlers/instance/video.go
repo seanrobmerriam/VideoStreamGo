@@ -374,26 +374,67 @@ func (h *VideoUploadHandler) UploadVideo(c *gin.Context) (*types.APIResponse, er
 }
 
 // GetUploadProgress returns the upload progress for a video
-func (h *VideoUploadHandler) GetUploadProgress(c *gin.Context) (*ChunkUploadResponse, error) {
+func (h *VideoUploadHandler) GetUploadProgress(c *gin.Context) {
+	// Get instance ID from context (set by tenant middleware)
+	instanceID, exists := c.Get(string(types.ContextKeyInstanceID))
+	if !exists {
+		c.JSON(http.StatusForbidden, types.ErrorResponse(
+			"ACCESS_DENIED",
+			"Instance context is missing",
+			"",
+		))
+		return
+	}
+
+	instanceIDUUID, ok := instanceID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusForbidden, types.ErrorResponse(
+			"ACCESS_DENIED",
+			"Invalid instance ID in context",
+			"",
+		))
+		return
+	}
+
 	videoIDStr := c.Param("id")
 	videoID, err := uuid.Parse(videoIDStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid video ID: %w", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(
+			"INVALID_VIDEO_ID",
+			"Invalid video ID format",
+			"",
+		))
+		return
 	}
 
 	// Get video from database
 	video, err := h.videoRepo.GetByID(c, videoID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get video: %w", err)
+		c.JSON(http.StatusNotFound, types.ErrorResponse(
+			"VIDEO_NOT_FOUND",
+			"Video not found",
+			"",
+		))
+		return
 	}
 
-	return &ChunkUploadResponse{
+	// SECURITY FIX: Verify the video belongs to the current tenant (IDOR vulnerability fix)
+	if video.InstanceID != instanceIDUUID {
+		c.JSON(http.StatusForbidden, types.ErrorResponse(
+			"ACCESS_DENIED",
+			"Video does not belong to this instance",
+			"",
+		))
+		return
+	}
+
+	c.JSON(http.StatusOK, ChunkUploadResponse{
 		UploadID:       videoID,
 		ChunkNumber:    int(video.ProcessingProgress),
 		UploadedChunks: int(video.ProcessingProgress),
 		TotalChunks:    100,
 		Progress:       float64(video.ProcessingProgress),
-	}, nil
+	})
 }
 
 // CancelUpload cancels an ongoing upload
@@ -482,9 +523,123 @@ func (h *VideoUploadHandler) validateVideoFile(file *multipart.FileHeader) error
 	return nil
 }
 
-// StreamVideoHandler handles video streaming requests
-func StreamVideoHandler(c *gin.Context) {
+// StreamVideoHandler handles video streaming requests with authentication and authorization
+func (h *VideoUploadHandler) StreamVideoHandler(c *gin.Context) {
+	// Step 1: Authentication - Check for valid JWT token in context
+	userID, exists := c.Get(string(types.ContextKeyUserID))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse(
+			"UNAUTHORIZED",
+			"Authentication required. Please provide a valid JWT token.",
+			"",
+		))
+		return
+	}
+
+	userIDUUID, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse(
+			"INVALID_USER",
+			"Invalid user ID in authentication context",
+			"",
+		))
+		return
+	}
+
+	// Get instance ID from context (set by tenant middleware)
+	instanceID, exists := c.Get(string(types.ContextKeyInstanceID))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse(
+			"MISSING_INSTANCE",
+			"Instance context is missing",
+			"",
+		))
+		return
+	}
+
+	instanceIDUUID, ok := instanceID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, types.ErrorResponse(
+			"INVALID_INSTANCE",
+			"Invalid instance ID in context",
+			"",
+		))
+		return
+	}
+
+	// Step 2: Parse video ID
 	videoID := c.Param("id")
+	if videoID == "" {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(
+			"MISSING_VIDEO_ID",
+			"Video ID is required",
+			"",
+		))
+		return
+	}
+
+	videoUUID, err := uuid.Parse(videoID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(
+			"INVALID_VIDEO_ID",
+			"Invalid video ID format",
+			"",
+		))
+		return
+	}
+
+	// Step 3: Fetch video from database
+	video, err := h.videoRepo.GetByID(c.Request.Context(), videoUUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, types.ErrorResponse(
+			"VIDEO_NOT_FOUND",
+			"Video not found",
+			"",
+		))
+		return
+	}
+
+	// Step 4: Authorization - Verify user has access to the video
+	// Check 1: Video must belong to the same instance (tenant)
+	if video.InstanceID != instanceIDUUID {
+		c.JSON(http.StatusForbidden, types.ErrorResponse(
+			"ACCESS_DENIED",
+			"Video does not belong to this instance",
+			"",
+		))
+		return
+	}
+
+	// Check 2: User must be the owner OR video must be public
+	isOwner := video.UserID == userIDUUID
+	isPublic := video.IsPublic
+
+	if !isOwner && !isPublic {
+		c.JSON(http.StatusForbidden, types.ErrorResponse(
+			"ACCESS_DENIED",
+			"You do not have permission to stream this video. Only the owner or public videos can be accessed.",
+			"",
+		))
+		return
+	}
+
+	// Step 5: Check video status - only allow streaming of ready/active/hidden videos
+	allowedStatuses := map[instancemodels.VideoStatus]bool{
+		instancemodels.VideoStatusReady:   true,
+		instancemodels.VideoStatusActive:  true,
+		instancemodels.VideoStatusHidden:  true,
+	}
+
+	if !allowedStatuses[video.Status] {
+		c.JSON(http.StatusForbidden, types.ErrorResponse(
+			"VIDEO_NOT_AVAILABLE",
+			"Video is not available for streaming",
+			"",
+		))
+		return
+	}
+
+	// Step 6: Handle video streaming
 	quality := c.Param("quality")
 
 	// Set content type for HLS
@@ -506,10 +661,14 @@ func StreamVideoHandler(c *gin.Context) {
 		c.Status(http.StatusPartialContent)
 	}
 
+	// Return video streaming information
+	// In production, this would return the actual video stream or redirect to CDN
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Video streaming endpoint",
 		"video_id":    videoID,
 		"quality":     quality,
 		"stream_type": "hls",
+		"video_url":   video.VideoURL,
+		"hls_path":    video.HLSPath,
 	})
 }
