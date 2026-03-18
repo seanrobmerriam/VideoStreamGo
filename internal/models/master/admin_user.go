@@ -28,16 +28,16 @@ const (
 
 // AdminUser represents a platform admin user
 type AdminUser struct {
-	ID           uuid.UUID   `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Email        string      `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string      `gorm:"type:varchar(255);not null" json:"-"`
-	DisplayName  string      `gorm:"type:varchar(100)" json:"display_name"`
-	Role         AdminRole   `gorm:"type:varchar(50);default:'admin'" json:"role"`
-	Status       AdminStatus `gorm:"type:varchar(50);default:'active';index" json:"status"`
-	Permissions  JSONMap     `gorm:"type:jsonb;default:'[]'" json:"permissions"`
-	LastLoginAt  *time.Time  `json:"last_login_at"`
-	CreatedAt    time.Time   `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt    time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
+	ID           uuid.UUID       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Email        string          `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash string          `gorm:"type:varchar(255);not null" json:"-"`
+	DisplayName  string          `gorm:"type:varchar(100)" json:"display_name"`
+	Role         AdminRole       `gorm:"type:varchar(50);default:'admin'" json:"role"`
+	Status       AdminStatus     `gorm:"type:varchar(50);default:'active';index" json:"status"`
+	Permissions  JSONStringArray `gorm:"type:jsonb;default:'[]'" json:"permissions"`
+	LastLoginAt  *time.Time      `json:"last_login_at"`
+	CreatedAt    time.Time       `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // TableName sets the table name for AdminUser
@@ -63,11 +63,7 @@ func (au *AdminUser) HasPermission(permission string) bool {
 	if au.IsSuperAdmin() {
 		return true
 	}
-	permissions, ok := au.Permissions["permissions"].([]string)
-	if !ok {
-		return false
-	}
-	for _, p := range permissions {
+	for _, p := range au.Permissions {
 		if p == permission {
 			return true
 		}

@@ -103,6 +103,7 @@ import Input from '@components/common/Input.astro';
       errorContainer.classList.remove('hidden');
       return;
     }
+
     if (password.length < 8) {
       errorContainer.textContent = 'Password must be at least 8 characters';
       errorContainer.classList.remove('hidden');

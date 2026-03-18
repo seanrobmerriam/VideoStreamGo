@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm/schema"
 
 	"videostreamgo/internal/config"
+	"videostreamgo/internal/database/migrations"
 )
 
 // MasterDB holds the master database connection
@@ -80,15 +81,11 @@ func (m *MasterDB) GetDB() *gorm.DB {
 
 // Migrate runs database migrations for the master database
 func (m *MasterDB) Migrate() error {
-	// Auto-migrate all master models
-	// Note: In production, use explicit migrations for more control
-	err := m.DB.AutoMigrate(
-	// Master models will be imported here
-	)
-	if err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+	for _, migration := range migrations.MasterMigrations {
+		if err := migration(m.DB); err != nil {
+			return fmt.Errorf("failed to run migration: %w", err)
+		}
 	}
-
 	return nil
 }
 
