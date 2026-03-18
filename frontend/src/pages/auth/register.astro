@@ -18,7 +18,11 @@ import Input from '@components/common/Input.astro';
           </a>
         </p>
       </div>
-      <form class="mt-8 space-y-6" method="POST" action="/api/auth/register">
+
+      <!-- Error message container -->
+      <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"></div>
+
+      <form class="mt-8 space-y-6" id="register-form">
         <div class="rounded-md shadow-sm -space-y-px">
           <Input
             id="name"
@@ -71,7 +75,7 @@ import Input from '@components/common/Input.astro';
         </div>
 
         <div>
-          <Button type="submit" class="w-full flex justify-center">
+          <Button type="submit" class="w-full flex justify-center" id="submit-btn">
             Create account
           </Button>
         </div>
@@ -79,3 +83,63 @@ import Input from '@components/common/Input.astro';
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const form = document.getElementById('register-form');
+  const errorContainer = document.getElementById('error-message');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    errorContainer.classList.add('hidden');
+    errorContainer.textContent = '';
+
+    const formData = new FormData(form);
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+
+    if (password !== confirmPassword) {
+      errorContainer.textContent = 'Passwords do not match';
+      errorContainer.classList.remove('hidden');
+      return;
+    }
+    if (password.length < 8) {
+      errorContainer.textContent = 'Password must be at least 8 characters';
+      errorContainer.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account...';
+
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/auth/admin/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          display_name: formData.get('name'),
+          email: formData.get('email'),
+          password,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Registration failed');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = '/dashboard';
+
+    } catch (error) {
+      errorContainer.textContent = error.message;
+      errorContainer.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create account';
+    }
+  });
+</script>

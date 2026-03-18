@@ -1,8 +1,14 @@
-import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 // API Configuration
-const PLATFORM_API_URL = import.meta.env.PUBLIC_PLATFORM_API_URL || 'http://localhost:8080';
-const INSTANCE_API_URL = import.meta.env.PUBLIC_INSTANCE_API_URL || 'http://localhost:8081';
+const PLATFORM_API_URL =
+  import.meta.env.PUBLIC_PLATFORM_API_URL || "http://localhost:8080";
+const INSTANCE_API_URL =
+  import.meta.env.PUBLIC_INSTANCE_API_URL || "http://localhost:8081";
 
 // Create axios instances
 const createApiClient = (baseURL: string): AxiosInstance => {
@@ -11,25 +17,38 @@ const createApiClient = (baseURL: string): AxiosInstance => {
     timeout: 30000,
     withCredentials: true, // Required for httpOnly cookies - browser sends cookies automatically
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
-  // NOTE: With httpOnly cookies, the browser automatically sends cookies with requests.
-  // We no longer need to manually set Authorization headers.
-  // The server sets the cookie with HttpOnly, Secure, and SameSite=Strict flags.
+  // Request interceptor for auth token
+  client.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
 
   // Response interceptor
   client.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
       if (error.response?.status === 401) {
-        // On 401, clear user state (token is in httpOnly cookie, can't clear it from JS)
-        // The backend should handle cookie invalidation on logout
-        window.location.href = '/login';
+        const publicPaths = [
+          "/",
+          "/auth/login",
+          "/auth/register",
+          "/auth/forgot-password",
+          "/auth/reset-password",
+        ];
+        const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+        if (!publicPaths.includes(currentPath)) {
+          window.location.href = "/auth/login";
+        }
       }
       return Promise.reject(error);
-    }
+    },
   );
 
   return client;
@@ -65,22 +84,26 @@ export const handleApiError = (error: unknown): ErrorResponse => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ErrorResponse>;
     return {
-      message: axiosError.response?.data?.message || axiosError.message || 'An error occurred',
+      message:
+        axiosError.response?.data?.message ||
+        axiosError.message ||
+        "An error occurred",
       code: axiosError.response?.data?.code,
       details: axiosError.response?.data?.details,
     };
   }
   return {
-    message: error instanceof Error ? error.message : 'An unexpected error occurred',
+    message:
+      error instanceof Error ? error.message : "An unexpected error occurred",
   };
 };
 
 // Request helper with error handling
 export const apiRequest = async <T>(
   client: AxiosInstance,
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   url: string,
-  data?: unknown
+  data?: unknown,
 ): Promise<T> => {
   try {
     const response = await client.request<T>({
@@ -90,7 +113,8 @@ export const apiRequest = async <T>(
     });
     return response.data;
   } catch (error) {
-    throw handleApiError(error);
+    const errorResponse = handleApiError(error);
+    throw new Error(errorResponse.message);
   }
 };
 

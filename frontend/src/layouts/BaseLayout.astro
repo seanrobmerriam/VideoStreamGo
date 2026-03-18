@@ -40,3 +40,16 @@ const { title, description = 'VideoStreamGo - White-label video platform', showH
     {showFooter && <Footer />}
   </body>
 </html>
+
+<script>
+  import { initializeAuth } from '../stores/auth';
+
+  const publicPaths = ['/', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
+  const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!publicPaths.includes(currentPath)) {
+      initializeAuth();
+    }
+  });
+</script>

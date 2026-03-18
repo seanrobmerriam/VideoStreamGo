@@ -18,7 +18,11 @@ import Input from '@components/common/Input.astro';
           </a>
         </p>
       </div>
-      <form class="mt-8 space-y-6" method="POST" action="/api/auth/login">
+
+      <!-- Error message container -->
+      <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"></div>
+
+      <form class="mt-8 space-y-6" id="login-form">
         <div class="rounded-md shadow-sm -space-y-px">
           <Input
             id="email"
@@ -61,7 +65,7 @@ import Input from '@components/common/Input.astro';
         </div>
 
         <div>
-          <Button type="submit" class="w-full flex justify-center">
+          <Button type="submit" class="w-full flex justify-center" id="submit-btn">
             Sign in
           </Button>
         </div>
@@ -69,3 +73,46 @@ import Input from '@components/common/Input.astro';
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const form = document.getElementById('login-form');
+  const errorContainer = document.getElementById('error-message');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    errorContainer.classList.add('hidden');
+    errorContainer.textContent = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/auth/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: formData.get('email'),
+          password: formData.get('password'),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Login failed');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = '/dashboard';
+    } catch (error) {
+      errorContainer.textContent = error.message;
+      errorContainer.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign in';
+    }
+  });
+</script>

@@ -152,7 +152,8 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: videostreamgo-frontend
     environment:
-      - API_URL=http://platform-api:8080/v1
+      - PUBLIC_PLATFORM_API_URL=http://platform-api:8080
+      - PUBLIC_INSTANCE_API_URL=http://instance-api:8081
       - PUBLIC_INSTANCE_ID=platform
     ports:
       - "3000:3000"

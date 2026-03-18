@@ -11,6 +11,7 @@ interface Props {
 }
 
 const {
+  id,
   variant = 'primary',
   size = 'md',
   type = 'button',
@@ -49,6 +50,7 @@ const Element = href ? 'a' : 'button';
 ---
 
 <Element
+  id={id}
   class={buttonClasses}
   type={href ? undefined : type}
   href={href}

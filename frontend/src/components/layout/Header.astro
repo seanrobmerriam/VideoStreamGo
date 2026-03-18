@@ -62,8 +62,8 @@ const { logo, title = 'VideoStreamGo', showSearch = false } = Astro.props;
 
         <!-- Auth buttons -->
         <div class="hidden md:flex items-center gap-2">
-          <a href="/login" class="btn-ghost text-sm">Sign In</a>
-          <a href="/signup" class="btn-primary text-sm">Get Started</a>
+          <a href="/auth/login" class="btn-ghost text-sm">Sign In</a>
+          <a href="/auth/register" class="btn-primary text-sm">Get Started</a>
         </div>
 
         <!-- Mobile menu button -->
@@ -79,8 +79,8 @@ const { logo, title = 'VideoStreamGo', showSearch = false } = Astro.props;
   <!-- Mobile menu -->
   <div class="md:hidden hidden border-t border-secondary-200 dark:border-secondary-800" id="mobile-menu">
     <div class="space-y-1 p-4">
-      <a href="/login" class="block btn-ghost w-full text-left">Sign In</a>
-      <a href="/signup" class="block btn-primary w-full text-center">Get Started</a>
+      <a href="/auth/login" class="block btn-ghost w-full text-left">Sign In</a>
+      <a href="/auth/register" class="block btn-primary w-full text-center">Get Started</a>
     </div>
   </div>
 </header>

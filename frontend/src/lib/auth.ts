@@ -1,11 +1,11 @@
-import { apiRequest, platformApi, instanceApi, type ApiResponse } from './api';
+import { apiRequest, platformApi, instanceApi, type ApiResponse } from "./api";
 
 // Types
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: 'admin' | 'customer' | 'user';
+  display_name: string; // ← was 'name'
+  role: "admin" | "customer" | "user";
   avatar?: string;
   createdAt: string;
 }
@@ -23,29 +23,28 @@ export interface RegisterData {
 }
 
 export interface AuthResponse {
+  token: string;
+  expires_at: string;
   user: User;
-  // NOTE: token is now set as httpOnly cookie by the server
-  // The frontend receives it only for reference; actual auth is cookie-based
-  token?: string;
 }
 
 /**
  * SECURITY FIX: Token Storage
- * 
+ *
  * Tokens are now stored in httpOnly cookies instead of localStorage.
- * 
+ *
  * BACKEND REQUIREMENT:
  * The server MUST set the following cookie header on login/register responses:
- * 
+ *
  * ```
  * Set-Cookie: auth_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=<expiry>
  * ```
- * 
+ *
  * Benefits of httpOnly cookies:
  * - Cannot be accessed by JavaScript (prevents XSS token theft)
  * - Automatically sent with requests (withCredentials: true required)
  * - Protected by SameSite=Strict CSRF prevention
- * 
+ *
  * IMPORTANT: The frontend uses withCredentials: true in axios config,
  * which enables automatic cookie transmission. The server must handle
  * cookie creation and invalidation.
@@ -54,27 +53,44 @@ export interface AuthResponse {
 // Platform Auth
 export const platformAuth = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>(platformApi, 'POST', '/api/v1/auth/login', credentials);
+    return apiRequest<AuthResponse>(
+      platformApi,
+      "POST",
+      "/api/v1/auth/admin/login",
+      credentials,
+    );
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>(platformApi, 'POST', '/api/v1/auth/register', data);
+    return apiRequest<AuthResponse>(
+      platformApi,
+      "POST",
+      "/api/v1/auth/admin/register",
+      {
+        email: data.email,
+        password: data.password,
+        display_name: data.name,
+      },
+    );
   },
 
   async getCurrentUser(): Promise<User> {
-    return apiRequest<User>(platformApi, 'GET', '/api/v1/auth/me');
+    return apiRequest<User>(platformApi, "GET", "/api/v1/admin/me");
   },
 
   async logout(): Promise<void> {
-    await apiRequest<void>(platformApi, 'POST', '/api/v1/auth/logout');
+    await apiRequest<void>(platformApi, "POST", "/api/v1/auth/logout");
   },
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    return apiRequest<User>(platformApi, 'PUT', '/api/v1/auth/profile', data);
+    return apiRequest<User>(platformApi, "PUT", "/api/v1/auth/profile", data);
   },
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await apiRequest<void>(platformApi, 'PUT', '/api/v1/auth/password', {
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    await apiRequest<void>(platformApi, "PUT", "/api/v1/auth/password", {
       currentPassword,
       newPassword,
     });
@@ -83,16 +99,31 @@ export const platformAuth = {
 
 // Instance Auth
 export const instanceAuth = {
-  async login(credentials: LoginCredentials, subdomain: string): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>(instanceApi, 'POST', `/${subdomain}/api/v1/auth/login`, credentials);
+  async login(
+    credentials: LoginCredentials,
+    subdomain: string,
+  ): Promise<AuthResponse> {
+    return apiRequest<AuthResponse>(
+      instanceApi,
+      "POST",
+      `/${subdomain}/api/v1/auth/admin/login`,
+      credentials,
+    );
   },
 
-  async register(data: RegisterData & { subdomain: string }): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>(instanceApi, 'POST', `/${data.subdomain}/api/v1/auth/register`, data);
+  async register(
+    data: RegisterData & { subdomain: string },
+  ): Promise<AuthResponse> {
+    return apiRequest<AuthResponse>(
+      instanceApi,
+      "POST",
+      `/${data.subdomain}/api/v1/auth/admin/register`,
+      data,
+    );
   },
 
   async getCurrentUser(subdomain: string): Promise<User> {
-    return apiRequest<User>(instanceApi, 'GET', `/${subdomain}/api/v1/auth/me`);
+    return apiRequest<User>(instanceApi, "GET", `/${subdomain}/api/v1/auth/me`);
   },
 };
 
@@ -119,7 +150,7 @@ export const tokenManager = {
   setToken(_token: string): void {
     // Token is set by server via httpOnly cookie
     // This is a no-op for security - we cannot set httpOnly cookies from JavaScript
-    console.warn('Token setting is handled server-side via httpOnly cookies');
+    console.warn("Token setting is handled server-side via httpOnly cookies");
   },
 
   /**
@@ -129,7 +160,7 @@ export const tokenManager = {
   removeToken(): void {
     // Token removal is handled by server via logout endpoint
     // This is a no-op for security
-    console.warn('Token removal is handled server-side via logout');
+    console.warn("Token removal is handled server-side via logout");
   },
 
   /**
@@ -137,18 +168,18 @@ export const tokenManager = {
    * User data is not sensitive - it's public profile info
    */
   getStoredUser(): User | null {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     return user ? JSON.parse(user) : null;
   },
 
   setStoredUser(user: User): void {
     // Store user in localStorage for UI display purposes
     // This is not sensitive auth data - just user profile info
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem("user", JSON.stringify(user));
   },
 
   removeStoredUser(): void {
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
   },
 
   clearAll(): void {
@@ -166,14 +197,14 @@ export const isAuthenticated = (): boolean => {
   return false;
 };
 
-export const hasRole = (user: User | null, roles: User['role'][]): boolean => {
+export const hasRole = (user: User | null, roles: User["role"][]): boolean => {
   return user ? roles.includes(user.role) : false;
 };
 
 export const isAdmin = (user: User | null): boolean => {
-  return user?.role === 'admin';
+  return user?.role === "admin";
 };
 
 export const isCustomer = (user: User | null): boolean => {
-  return user?.role === 'customer';
+  return user?.role === "customer";
 };
